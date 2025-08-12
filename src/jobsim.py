@@ -52,6 +52,31 @@ class EventType(Enum):
    COLD_WORKER_READY = "cold_worker_ready"
    DEALLOCATED_WORKER_READY_FROM_POOL = "deallocated_worker_ready_from_pool"
    COLD_WORKER_READY_FROM_POOL = "cold_worker_ready_from_pool"
+   DEALLOCATED_WORKER_TO_POOL = "deallocated_worker_to_pool"
+   COLD_WORKER_TO_POOL = "cold_worker_to_pool"
+
+def get_event_type_to_pool_from_worker_type(worker_type):
+   if worker_type == 'deallocated':
+      return EventType.DEALLOCATED_WORKER_TO_POOL
+   elif worker_type == 'cold':
+      return EventType.COLD_WORKER_TO_POOL
+
+def get_event_type_ready_from_worker_type(worker_type):
+   if worker_type == 'standby':
+      return EventType.STANDBY_WORKER_READY
+   elif worker_type == 'deallocated':
+      return EventType.DEALLOCATED_WORKER_READY
+   elif worker_type == 'cold':
+      return EventType.COLD_WORKER_READY
+
+def get_worker_shutdown_time_from_worker_type(worker_type):
+   if worker_type == 'standby':
+      return 0
+   elif worker_type == 'deallocated':
+      return 0
+   elif worker_type == 'cold':
+      return WORKER_SHUTDOWN_TIME
+
 # Job Events Generation
 def generate_interarrival_time() -> int:
    return random.expovariate(LAMBDA_USERS_REQUESTS_PER_HOUR / HOUR)
@@ -123,18 +148,22 @@ class SimState:
 
 sim_state = SimState()
 
-def handle_worker_ready(worker_ready_time):
-  sim_state.workers_available['standby'] += 1
+def handle_worker_ready(worker_ready_time, worker_type):
+  sim_state.workers_available[worker_type] += 1
   #Run pending job
-  while sim_state.pending_jobs and sim_state.workers_available['standby'] > 0:
+  if sim_state.pending_jobs:
     job = sim_state.pending_jobs.pop(0)
     job.start_execution_time = worker_ready_time
     sim_state.completed_jobs.append(job)
-    sim_state.workers_available['standby'] -= 1
+    sim_state.workers_available[worker_type] -= 1
     sim_state.event_queue.push(
-        sim_state.sim_time + get_job_execution_duration(job.type), 
-        event_type=EventType.STANDBY_WORKER_READY)
-  
+        worker_ready_time + JOB_EXECUTION_DURATIONS[job.type],
+        event_type=get_event_type_ready_from_worker_type(worker_type))
+  else:
+    sim_state.event_queue.push(
+        worker_ready_time + get_worker_shutdown_time_from_worker_type(worker_type), 
+        event_type=get_event_type_to_pool_from_worker_type(worker_type))
+
 def handle_job_submitted(job_submitted_time, job):
   if allocate_worker(job_submitted_time, job):
     sim_state.completed_jobs.append(job)
@@ -198,10 +227,15 @@ if __name__ == "__main__":
   while not sim_state.event_queue.is_empty():
     event = sim_state.event_queue.pop()
     print(f"Event: {event.timestamp}, {event.event_type}, {event.data}")
-    if event.event_type == EventType.WORKER_READY:
-      handle_worker_ready(event.timestamp, job_generator)
+    if event.event_type == EventType.STANDBY_WORKER_READY:
+      handle_worker_ready(event.timestamp, 'standby')
+    elif event.event_type == EventType.DEALLOCATED_WORKER_READY:
+      handle_worker_ready(event.timestamp, 'deallocated')
+    elif event.event_type == EventType.COLD_WORKER_READY:
+      handle_worker_ready(event.timestamp, 'cold')
     elif event.event_type == EventType.JOB_SUBMITTED:
       handle_job_submitted(event.timestamp, event.data)
+    
     else:
       print(f"Unknown event type: {event.event_type}")
       exit
