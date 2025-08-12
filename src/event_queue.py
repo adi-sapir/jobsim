@@ -9,7 +9,7 @@ class Event:
     """Represents an event in the simulation with an integer timestamp and payload."""
     timestamp: int
     event_type: str
-    data: Any
+    data: Any = None
 
     def __lt__(self, other: "Event") -> bool:
         """Order events by timestamp only for heap operations."""
@@ -27,7 +27,7 @@ class EventQueue:
         self._events: List[Event] = []
         self._event_count: int = 0
 
-    def push(self, timestamp: int, data: Any) -> None:
+    def push(self, timestamp: int, event_type: str, data: Any) -> None:
         """
         Add an event to the queue.
 
@@ -35,7 +35,7 @@ class EventQueue:
             timestamp: When the event should occur (integer)
             data: Event data/payload
         """
-        event = Event(timestamp=timestamp, data=data)
+        event = Event(timestamp=timestamp, event_type=event_type, data=data)
         heapq.heappush(self._events, event)
         self._event_count += 1
 
