@@ -5,33 +5,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import sys
 
-@dataclass
-class Job:
-  id: str
-  type: str
-  user_type: str
-  submission_time: int
-  start_execution_time: int = 0
-    
-    
-#Time constants
-MINUTE = 60
-HOUR = 60 * MINUTE
-DAY = 24 * HOUR
 
-# Job types: S - small, M - medium, L - large
-JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
-random.shuffle(JOB_TYPES)
-
-JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
-JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
-
-#Users Types (subscription types) F - free, C - creator S - studio
-USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
-random.shuffle(USER_TYPES)
-USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
-# # Users requests per hour
-LAMBDA_USERS_REQUESTS_PER_HOUR = 100
 
 # Job resources
 STANDABY_WORKERS = 2
@@ -77,57 +51,13 @@ def get_worker_shutdown_time_from_worker_type(worker_type):
    elif worker_type == 'cold':
       return WORKER_SHUTDOWN_TIME
 
-# Job Events Generation
-def generate_interarrival_time() -> int:
-   return random.expovariate(LAMBDA_USERS_REQUESTS_PER_HOUR / HOUR)
 
-#=============Job Generator=============
-class JobGenerator:
-  def __init__(self):
-    self.user_type_index = 0
-    self.job_type_index = 0
-    self.job_id = 0
 
-job_generator = JobGenerator()
-
-def handle_user_request(user_request_time, job_generator):
-  #Select type of user
-  user_type = USER_TYPES[job_generator.user_type_index % len(USER_TYPES)]
-  job_generator.user_type_index += 1
-  #Generate the number of jobs to be submitted
-  num_jobs = random.randint(1, USER_ALLOWED_JOBS[user_type])
-  for _ in range(num_jobs):
-     create_job(user_request_time, user_type, job_generator)
-
-def create_job(user_request_time, user_type, job_generator):
-  job_type = JOB_TYPES[job_generator.job_type_index % len(JOB_TYPES)]
-  job_generator.job_type_index += 1
-  job = Job(
-    id=job_generator.job_id,
-    type=job_type,
-    user_type=user_type,
-    submission_time=user_request_time)
-  job_generator.job_id += 1
-  # Create Event for the job
-  sim_state.event_queue.push(
-      user_request_time, 
-      event_type=EventType.JOB_SUBMITTED, 
-      data=job)
 
 def init_jobs_in_queue():
-  time = 0
-  while time < SIMULATION_DURATION:
-    #Generate next user request time
-    user_request_time = int(time + generate_interarrival_time())
-    handle_user_request(user_request_time, job_generator )
-    #Update the time
-    time = user_request_time
+  
 
-def print_pending_jobs(job_generator):
-   print(f"Pending jobs: {len(job_generator.pending_jobs)}")
-   for job in job_generator.pending_jobs:
-      job_json = asdict(job)
-      print(job_json)
+
 
 #=============Simulation State=============
 class SimState:
