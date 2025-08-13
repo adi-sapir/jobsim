@@ -4,11 +4,8 @@
 import random
 import json
 import argparse
+from time_def import MINUTE, HOUR
 
-#Time constants
-MINUTE = 60
-HOUR = 60 * MINUTE
-DAY = 24 * HOUR
 
 # Job types: S - small, M - medium, L - large
 JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
@@ -85,6 +82,9 @@ class Job:
 
   def get_start_execution_time(self):
     return self.start_execution_time
+  
+  def set_start_execution_time(self, start_execution_time: int):
+    self.start_execution_time = start_execution_time
   
 class JobGenerator:
   def __init__(self):

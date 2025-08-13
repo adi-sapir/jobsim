@@ -1,172 +1,116 @@
-import random
-import json
 from event_queue import EventQueue, Event
-from dataclasses import dataclass, asdict
 from enum import Enum
 import sys
+import argparse
+from workers_model import WorkerPool, WorkerType, WorkerStatus
+from jobgen import JobGenerator, Job
+from time_def import MINUTE, HOUR
 
 
 
-# Job resources
-STANDABY_WORKERS = 2
-MAX_DEALLOCATED_WORKERS = 20
-MAX_COLD_WORKERS = 30
-WORKER_STARTUP_TIME = 10 * MINUTE
-WORKER_SHUTDOWN_TIME = 30 * MINUTE
-WORKER_ALLOCATE_TIME = 3 * MINUTE
+def parse_duration_hms(value: str) -> int:
+  parts = value.split(":")
+  if len(parts) != 3:
+    raise argparse.ArgumentTypeError("duration must be in H:M:S format")
+  try:
+    hours, minutes, seconds = (int(p) for p in parts)
+  except ValueError:
+    raise argparse.ArgumentTypeError("duration components must be integers")
+  if hours < 0 or not (0 <= minutes < 60) or not (0 <= seconds < 60):
+    raise argparse.ArgumentTypeError("duration must satisfy H>=0, 0<=M<60, 0<=S<60")
+  return hours * HOUR + minutes * MINUTE + seconds
 
-# Simulation parameters
-SIMULATION_DURATION = 10 * MINUTE
 
 #Event Types
 class EventType(Enum):
    JOB_SUBMITTED = "job_submitted"
-   STANDBY_WORKER_READY = "standby_worker_ready"
-   DEALLOCATED_WORKER_READY = "deallocated_worker_ready"
-   COLD_WORKER_READY = "cold_worker_ready"
-   DEALLOCATED_WORKER_READY_FROM_POOL = "deallocated_worker_ready_from_pool"
-   COLD_WORKER_READY_FROM_POOL = "cold_worker_ready_from_pool"
-   DEALLOCATED_WORKER_TO_POOL = "deallocated_worker_to_pool"
-   COLD_WORKER_TO_POOL = "cold_worker_to_pool"
-
-def get_event_type_to_pool_from_worker_type(worker_type):
-   if worker_type == 'deallocated':
-      return EventType.DEALLOCATED_WORKER_TO_POOL
-   elif worker_type == 'cold':
-      return EventType.COLD_WORKER_TO_POOL
-
-def get_event_type_ready_from_worker_type(worker_type):
-   if worker_type == 'standby':
-      return EventType.STANDBY_WORKER_READY
-   elif worker_type == 'deallocated':
-      return EventType.DEALLOCATED_WORKER_READY
-   elif worker_type == 'cold':
-      return EventType.COLD_WORKER_READY
-
-def get_worker_shutdown_time_from_worker_type(worker_type):
-   if worker_type == 'standby':
-      return 0
-   elif worker_type == 'deallocated':
-      return 0
-   elif worker_type == 'cold':
-      return WORKER_SHUTDOWN_TIME
-
-
-
-
-def init_jobs_in_queue():
-  
-
+   WORKER_DONE = "worker_done"
+   WORKER_READY = "worker_ready"
+   WORKER_TO_POOL = "worker_to_pool"
 
 
 #=============Simulation State=============
 class SimState:
-   def __init__(self):
-      self.sim_time = 0
-      self.workers_available = {
-        'standby': STANDABY_WORKERS,
-        'deallocated': 0,
-        'cold': 0
-      }
-      self.workers_pool = {
-        'deallocated': MAX_DEALLOCATED_WORKERS,
-        'cold': MAX_COLD_WORKERS
-      }
+  def __init__(self):
       self.event_queue = EventQueue()
+      self.workers_pool = WorkerPool()
       self.pending_jobs: list[Job] = []
       self.completed_jobs: list[Job] = []
+  
+  def get_event_queue(self):
+    return self.event_queue
+  
+  def get_workers_pool(self):
+    return self.workers_pool
+  
+  def get_pending_jobs(self):
+    return self.pending_jobs
+  
+  def get_completed_jobs(self):
+    return self.completed_jobs
+  
+  def init_jobs_in_queue(self, jobs: list[Job]):
+    for job in jobs:
+      self.event_queue.push(job.submission_time, EventType.JOB_SUBMITTED, job)
 
-sim_state = SimState()
+  def handle_job_submitted(self, job_submitted_time, job) -> None:
+    if (worker := self.workers_pool.allocate_ready_worker()) is not None:
+      job.set_start_execution_time(job_submitted_time)
+      self.completed_jobs.append(job)
+      self.event_queue.push(job_submitted_time + job.get_execution_duration(), EventType.WORKER_DONE, worker)
+    else:
+      self.pending_jobs.append(job)
+      if (worker := self.workers_pool.invoke_worker()) is not None:
+        self.event_queue.push(job_submitted_time + worker.get_worker_activation_time(), EventType.WORKER_TO_POOL, worker)
 
-def handle_worker_ready(worker_ready_time, worker_type):
-  sim_state.workers_available[worker_type] += 1
-  #Run pending job
-  if sim_state.pending_jobs:
-    job = sim_state.pending_jobs.pop(0)
-    job.start_execution_time = worker_ready_time
-    sim_state.completed_jobs.append(job)
-    sim_state.workers_available[worker_type] -= 1
-    sim_state.event_queue.push(
-        worker_ready_time + JOB_EXECUTION_DURATIONS[job.type],
-        event_type=get_event_type_ready_from_worker_type(worker_type))
-  else:
-    sim_state.event_queue.push(
-        worker_ready_time + get_worker_shutdown_time_from_worker_type(worker_type), 
-        event_type=get_event_type_to_pool_from_worker_type(worker_type))
+  def handle_worker_ready(self, worker_ready_time, worker) -> None:
+    worker.set_worker_status(WorkerStatus.READY)
+    if self.pending_jobs:
+      self.handle_job_submitted(worker_ready_time, self.pending_jobs.pop(0))
+    else:
+      self.event_queue.push(worker_ready_time + worker.get_worker_shutdown_time(), EventType.WORKER_TO_POOL, worker)
 
-def handle_job_submitted(job_submitted_time, job):
-  if allocate_worker(job_submitted_time, job):
-    sim_state.completed_jobs.append(job)
-  else:
-    sim_state.pending_jobs.append(job)
-    invoke_worker(job_submitted_time)
+  def handle_worker_to_pool(self, worker_to_pool_time, worker) -> None:
+    worker.set_worker_status(WorkerStatus.IN_POOL)
 
-def invoke_worker(job_submitted_time) -> None:
-  if sim_state.workers_pool['deallocated'] > 0:
-    sim_state.event_queue.push(job_submitted_time + WORKER_ALLOCATE_TIME, 
-        event_type=EventType.DEALLOCATED_WORKER_READY_FROM_POOL)
-  elif sim_state.workers_pool['cold'] > 0:
-    sim_state.event_queue.push(job_submitted_time + WORKER_STARTUP_TIME, 
-        event_type=EventType.COLD_WORKER_READY_FROM_POOL)
-  else:
+  def run(self):
+    while not self.event_queue.is_empty():
+      event = self.event_queue.pop()
+      if event.event_type == EventType.JOB_SUBMITTED:
+        self.handle_job_submitted(event.timestamp, event.data)
+      elif event.event_type == EventType.WORKER_READY:
+        self.handle_worker_ready(event.timestamp, event.data)
+      elif event.event_type == EventType.WORKER_DONE:
+        self.handle_worker_ready(event.timestamp, event.data)
+      elif event.event_type == EventType.WORKER_TO_POOL:
+        self.handle_worker_to_pool(event.timestamp, event.data)
+
+  def print_statistics(self) -> None:
+    print(f"Queue size: {self.event_queue.size()}")
+    print(f"Queue: {self.event_queue}")
+    
+    wait_times = [j.get_start_execution_time() - j.get_submission_time() for j in self.completed_jobs]
+
+    print(f"Simulated {len(self.completed_jobs)} jobs")
+    print(f"Min Wait Time: {min(wait_times):.1f} sec")
+    print(f"Avg Wait Time: {sum(wait_times)/len(wait_times):.1f} sec")
+    print(f"Max Wait Time: {max(wait_times):.1f} sec")
     return
-
-def allocate_worker(job_submitted_time, job):
-  if sim_state.workers_available['standby'] > 0:
-    sim_state.workers_available['standby'] -= 1
-    job.start_execution_time = job_submitted_time
-    sim_state.completed_jobs.append(job)
-    sim_state.event_queue.push(
-        job_submitted_time + get_job_execution_duration(job.type), 
-        event_type=EventType.STANDBY_WORKER_READY)
-    return True
-  elif sim_state.workers_available['deallocated'] > 0:
-    sim_state.workers_available['deallocated'] -= 1
-    job.start_execution_time = job_submitted_time
-    sim_state.completed_jobs.append(job)
-    sim_state.event_queue.push(
-        job_submitted_time + get_job_execution_duration(job.type), 
-        event_type=EventType.DEALLOCATED_WORKER_READY)
-    return True
-  elif sim_state.workers_available['cold'] > 0:
-    sim_state.workers_available['cold'] -= 1
-    job.start_execution_time = job_submitted_time
-    sim_state.completed_jobs.append(job)
-    sim_state.event_queue.push(
-        job_submitted_time + get_job_execution_duration(job.type), 
-        event_type=EventType.COLD_WORKER_READY)
-    return True
-  return False
-
-def init_sim_state():
-  sim_state.sim_time = 0
-  sim_state.available_workers = STANDABY_WORKERS
 
 #run main
 if __name__ == "__main__":
-  #Create the event queue
-  init_jobs_in_queue()
-  print(f"USER_TYPES: {USER_TYPES}")
-  print(f"JOB_TYPES: {JOB_TYPES}")
-  print(f"Simulation duration: {SIMULATION_DURATION} seconds")
+  # Parse CLI duration H:M:S and set simulation duration
+  parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
+  parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
+  args = parser.parse_args()
+  sim_duration = args.duration
+  job_generator = JobGenerator()
+  sim_state = SimState()
+  sim_state.init_jobs_in_queue(job_generator.generate_jobs(0, sim_duration))
+  #Create the event queue and initialize jobs
+  print(f"Simulation duration: {sim_duration} seconds")
   print(f"Queue size: {sim_state.event_queue.size()}")
   print(f"Queue: {sim_state.event_queue}")
-  sys.exit()
-  #Initiate the simulation
-  init_sim_state()
-  while not sim_state.event_queue.is_empty():
-    event = sim_state.event_queue.pop()
-    print(f"Event: {event.timestamp}, {event.event_type}, {event.data}")
-    if event.event_type == EventType.STANDBY_WORKER_READY:
-      handle_worker_ready(event.timestamp, 'standby')
-    elif event.event_type == EventType.DEALLOCATED_WORKER_READY:
-      handle_worker_ready(event.timestamp, 'deallocated')
-    elif event.event_type == EventType.COLD_WORKER_READY:
-      handle_worker_ready(event.timestamp, 'cold')
-    elif event.event_type == EventType.JOB_SUBMITTED:
-      handle_job_submitted(event.timestamp, event.data)
-    
-    else:
-      print(f"Unknown event type: {event.event_type}")
-      exit
-    
+  # sys.exit()
+  sim_state.run()
+  sim_state.print_statistics()
