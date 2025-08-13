@@ -19,7 +19,7 @@ USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
 random.shuffle(USER_TYPES)
 USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
 # # Users requests per hour
-LAMBDA_USERS_REQUESTS_PER_HOUR = 100
+LAMBDA_USERS_REQUESTS_PER_HOUR = 20
 
 def generate_interarrival_time() -> int:
   return int(random.expovariate(LAMBDA_USERS_REQUESTS_PER_HOUR / HOUR))

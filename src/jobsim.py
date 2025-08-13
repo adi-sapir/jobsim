@@ -5,7 +5,8 @@ import argparse
 from workers_model import WorkerPool, WorkerType, WorkerStatus
 from jobgen import JobGenerator, Job
 from time_def import MINUTE, HOUR
-
+from debug_config import debug_print, set_debug, get_debug
+import matplotlib.pyplot as plt
 
 
 def parse_duration_hms(value: str) -> int:
@@ -76,25 +77,47 @@ class SimState:
   def run(self):
     while not self.event_queue.is_empty():
       event = self.event_queue.pop()
+      event_time = event.timestamp
       if event.event_type == EventType.JOB_SUBMITTED:
         self.handle_job_submitted(event.timestamp, event.data)
+        debug_print(f"{event_time}: Job submitted: {event.data}")
       elif event.event_type == EventType.WORKER_READY:
         self.handle_worker_ready(event.timestamp, event.data)
+        debug_print(f"{event_time}: Worker ready: {event.data}")
       elif event.event_type == EventType.WORKER_DONE:
         self.handle_worker_ready(event.timestamp, event.data)
+        debug_print(f"{event_time}: Worker done: {event.data}")
       elif event.event_type == EventType.WORKER_TO_POOL:
         self.handle_worker_to_pool(event.timestamp, event.data)
+        debug_print(f"{event_time}: Worker to pool: {event.data}")
 
   def print_statistics(self) -> None:
     print(f"Queue size: {self.event_queue.size()}")
     print(f"Queue: {self.event_queue}")
-    
+    debug_print(f"Completed jobs: {self.completed_jobs}")
+
+    submission_times = [j.get_submission_time() for j in self.completed_jobs]
     wait_times = [j.get_start_execution_time() - j.get_submission_time() for j in self.completed_jobs]
+    debug_print(f"Wait times: {wait_times}")
 
     print(f"Simulated {len(self.completed_jobs)} jobs")
     print(f"Min Wait Time: {min(wait_times):.1f} sec")
     print(f"Avg Wait Time: {sum(wait_times)/len(wait_times):.1f} sec")
     print(f"Max Wait Time: {max(wait_times):.1f} sec")
+
+    plt.hist(submission_times, bins=20, edgecolor='black')
+    plt.xlabel('Submission Time (seconds)')
+    plt.ylabel('Number of Jobs')
+    plt.title('Submission Time Distribution')
+    plt.savefig('submission_time_distribution.png')
+    plt.clf()
+
+    plt.hist(wait_times, bins=20, edgecolor='black')
+    plt.xlabel('Wait Time (seconds)')
+    plt.ylabel('Number of Jobs')
+    plt.title('Wait Time Distribution')
+    plt.savefig('wait_time_distribution.png')
+    plt.show()
     return
 
 #run main
@@ -102,7 +125,12 @@ if __name__ == "__main__":
   # Parse CLI duration H:M:S and set simulation duration
   parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
+  parser.add_argument("--debug", "-debug", action="store_true", help="Enable debug output")
   args = parser.parse_args()
+
+  set_debug(args.debug)
+  debug_print("JobSim starting...")
+
   sim_duration = args.duration
   job_generator = JobGenerator()
   sim_state = SimState()
