@@ -1,234 +1,231 @@
 # JobSim - Job Execution Simulation
 
-A Python-based job execution simulation system that models and simulates various job scheduling and execution scenarios.
+A Python-based discrete event simulation system that models job scheduling, worker allocation, and execution in a multi-tier worker pool environment.
 
 ## Overview
 
-JobSim is designed to simulate job execution environments, allowing developers and system administrators to test and analyze different job scheduling strategies, resource allocation policies, and execution patterns before implementing them in production systems.
+JobSim simulates a job processing system with three worker tiers: **standby** (always ready), **deallocated** (quick activation), and **cold** (slow startup). Jobs arrive according to configurable patterns and are processed by available workers, with automatic worker lifecycle management.
 
-## Features
+## Architecture
 
-- **Job Simulation**: Simulate various types of jobs with different resource requirements
-- **Scheduling Algorithms**: Test different job scheduling strategies (FIFO, Priority-based, Round Robin, etc.)
-- **Resource Management**: Simulate CPU, memory, and I/O resource allocation
-- **Performance Analysis**: Analyze job execution times, resource utilization, and system throughput
-- **Configurable Scenarios**: Create custom job execution scenarios for testing
+### Core Components
+
+- **EventQueue**: Min-heap based priority queue for timestamp-ordered event processing
+- **SimState**: Central simulation state managing jobs, workers, and event flow
+- **WorkerPool**: Manages worker lifecycle across three tiers with different activation costs
+- **JobGenerator**: Generates jobs based on configurable arrival patterns and user types
+- **Event-Driven Simulation**: Discrete event simulation using event types (JOB_SUBMITTED, WORKER_READY, WORKER_DONE, WORKER_TO_POOL)
+
+### Worker Model
+
+- **STANDBY**: Always ready, no activation cost, immediate job assignment
+- **DEALLOCATED**: Quick activation (configurable), no shutdown cost
+- **COLD**: Slow startup (configurable), shutdown cost applies
+
+### Event Flow
+
+1. Jobs are generated and queued as JOB_SUBMITTED events
+2. Available workers immediately process jobs
+3. If no workers available, invoke additional workers (prioritizing DEALLOCATED over COLD)
+4. Workers complete jobs and return to READY state
+5. Idle workers are sent back to pool after configurable shutdown delay
 
 ## Project Structure
 
 ```
 jobsim/
 ├── src/
-│   └── jobsim.py          # Main simulation engine
-├── tests/                  # Test suite (to be added)
-├── examples/               # Example configurations (to be added)
-├── docs/                   # Documentation (to be added)
-├── requirements.txt        # Python dependencies (to be added)
-└── README.md              # This file
+│   ├── jobsim.py         # Main simulator with CLI
+│   ├── jobgen.py         # Job generation CLI
+│   ├── event_queue.py    # Min-heap event queue
+│   ├── workers_model.py  # Worker types, statuses, and pool management
+│   ├── sim_config.py     # Configuration schema and CLI
+│   ├── debug_config.py   # Debug logging utilities
+│   └── time_def.py       # Time constants (MINUTE, HOUR, DAY)
+├── tests/                 # Configuration examples and test outputs
+│   ├── jobsim_config_basic.json
+│   ├── jobsim_config_with_minimal_workers.json
+│   └── *.png             # Generated plots from test runs
+└── README.md
 ```
 
-## Prerequisites
+## Configuration Schema
 
-- Python 3.8 or higher
-- pip (Python package installer)
+The simulation configuration supports:
 
-## Installation
+```json
+{
+  "job_definitions": [
+    {
+      "job_type": "S|M|L",
+      "job_execution_duration": 60,
+      "job_probability": 40
+    }
+  ],
+  "user_definitions": [
+    {
+      "user_type": "F|C|S",
+      "user_probability": 50,
+      "num_jobs": 1
+    }
+  ],
+  "lambda_users_requests_per_hour": 10,
+  "standby_workers": 2,
+  "max_deallocated_workers": 10,
+  "max_cold_workers": 30,
+  "worker_startup_time": 600,
+  "worker_shutdown_time": 1800,
+  "worker_allocate_time": 180
+}
+```
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd jobsim
-   ```
+### Configuration Fields
 
-2. Create a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies (when requirements.txt is available):
-   ```bash
-   pip install -r requirements.txt
-   ```
+- **Job Types**: S (small), M (medium), L (large) with execution durations and probabilities
+- **User Types**: F (free), C (creator), S (studio) with job limits and probabilities
+- **Worker Pool**: Counts and timing for each worker tier
+- **Arrival Rate**: Poisson process for job submissions
 
 ## Usage
 
-### Basic Usage
-
-```python
-from src.jobsim import JobSimulator
-
-# Create a simulator instance
-simulator = JobSimulator()
-
-# Add jobs to the simulation
-simulator.add_job(job_id="job1", priority=1, resources={"cpu": 2, "memory": 4})
-simulator.add_job(job_id="job2", priority=2, resources={"cpu": 1, "memory": 2})
-
-# Run the simulation
-results = simulator.run()
-```
-
-### Configuration Examples
-
-```python
-# Configure simulation parameters
-config = {
-    "scheduling_algorithm": "priority",
-    "resource_limits": {"cpu": 8, "memory": 16},
-    "time_quantum": 100,
-    "max_jobs": 100
-}
-
-simulator = JobSimulator(config)
-```
-
-## Development
-
-### Setting Up Development Environment
-
-1. Install development dependencies:
-   ```bash
-   pip install -r requirements-dev.txt  # When available
-   ```
-
-2. Run tests:
-   ```bash
-   python -m pytest tests/
-   ```
-
-3. Run linting:
-   ```bash
-   flake8 src/
-   ```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-## Architecture
-
-The simulation system is built around several core components:
-
-- **Job**: Represents a single job with resource requirements and execution parameters
-- **Scheduler**: Manages job queuing and execution order
-- **Resource Manager**: Handles resource allocation and deallocation
-- **Simulation Engine**: Coordinates the overall simulation process
-- **Metrics Collector**: Gathers performance and resource utilization data
-
-## Configuration
-
-JobSim can be configured through:
-
-- Configuration files (JSON/YAML)
-- Environment variables
-- Programmatic configuration
-- Command-line arguments
-
-## Examples
-
-### Simple Job Simulation
-
-```python
-from src.jobsim import JobSimulator, Job
-
-# Create jobs
-job1 = Job(id="web_server", priority=1, cpu_cores=2, memory_gb=4)
-job2 = Job(id="database", priority=2, cpu_cores=4, memory_gb=8)
-
-# Run simulation
-simulator = JobSimulator()
-simulator.add_job(job1)
-simulator.add_job(job2)
-
-results = simulator.run()
-print(f"Total execution time: {results.total_time}")
-print(f"Resource utilization: {results.resource_utilization}")
-```
-
-### Batch Job Processing
-
-```python
-# Simulate batch processing of multiple jobs
-batch_jobs = [
-    Job(id=f"batch_{i}", priority=3, cpu_cores=1, memory_gb=2)
-    for i in range(10)
-]
-
-simulator = JobSimulator(scheduling_algorithm="batch")
-for job in batch_jobs:
-    simulator.add_job(job)
-
-results = simulator.run()
-```
-
-## Testing
-
-Run the test suite to ensure everything works correctly:
+### Main Simulation
 
 ```bash
-# Run all tests
-python -m pytest
+# Basic simulation (1 hour)
+python src/jobsim.py 1:00:00
 
-# Run with coverage
-python -m pytest --cov=src
+# With configuration file
+python src/jobsim.py 0:30:00 --config tests/jobsim_config_basic.json
 
-# Run specific test file
-python -m pytest tests/test_jobsim.py
+# Named run with debug output
+python src/jobsim.py 0:15:00 --config tests/jobsim_config_basic.json --run-name baseline --debug
 ```
 
-## Performance
+### Job Generation Only
 
-JobSim is designed to handle:
-- Up to 10,000 concurrent jobs
-- Multiple resource types (CPU, Memory, I/O, GPU)
-- Various scheduling algorithms
-- Real-time simulation updates
+```bash
+# Generate jobs for 5 minutes (uses current config)
+python src/jobgen.py 0:05:00
+```
+
+### Configuration Management
+
+```bash
+# Print current configuration
+python src/sim_config.py --print
+
+# Load and save configuration
+python src/sim_config.py --load tests/jobsim_config_basic.json --save my_config.json
+```
+
+## Run Naming
+
+Run names are automatically generated as:
+1. `--run-name` if provided
+2. Config file basename (without extension) if `--config` used
+3. Current timestamp `YYYY-MM-DD--HH-MM-SS`
+
+Final name always includes `-sim-<seconds>` suffix for unique identification.
+
+## Outputs
+
+### Console Output
+- Simulation duration and queue statistics
+- Total jobs processed
+- Wait time statistics (min/avg/max)
+- Worker usage counts per type
+
+### Generated Plots (if matplotlib available)
+- **Submission Time Distribution**: Stacked histogram by job type
+- **Wait Time Distribution**: Stacked histogram by job type  
+- **Worker Use Time Distribution**: Stacked histogram by worker type
+
+Files are named: `{plot_type}_{run_name}.png`
+
+## Event Queue Implementation
+
+The `EventQueue` class provides O(log n) insertion and O(1) access to the earliest event:
+
+```python
+from src.event_queue import EventQueue
+
+eq = EventQueue()
+eq.push(100, "job_start")      # timestamp, data
+eq.push(50, "resource_check")  # automatically ordered
+
+while not eq.is_empty():
+    event = eq.pop()            # earliest timestamp first
+    print(f"{event.timestamp}: {event.data}")
+```
+
+## Worker Allocation Strategy
+
+1. **Immediate**: Use READY workers (standby or recently freed)
+2. **Quick Activation**: Invoke DEALLOCATED workers (3 min activation)
+3. **Slow Activation**: Invoke COLD workers (10 min startup)
+4. **Priority**: DEALLOCATED preferred over COLD for new invocations
+
+## Debug and Monitoring
+
+Enable debug output with `--debug` flag to see:
+- Job submission and worker assignment events
+- Worker state transitions
+- Queue management operations
+- Detailed timing information
+
+## Performance Characteristics
+
+- **Event Processing**: O(log n) per event insertion/removal
+- **Worker Allocation**: O(n) scan for available workers
+- **Memory**: Linear with job count and worker pool size
+- **Scalability**: Designed for thousands of jobs and hundreds of workers
+
+## Dependencies
+
+### Required
+- Python 3.10+
+- Standard library modules (argparse, datetime, enum, os, sys)
+
+### Optional
+- matplotlib: For generating plots and histograms
+
+Install optional dependency:
+```bash
+pip install matplotlib
+```
+
+## Testing and Examples
+
+The `tests/` directory contains:
+- Sample configuration files for different scenarios
+- Generated output plots from test runs
+- Examples of minimal vs. full worker pool configurations
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Memory Issues**: Reduce the number of concurrent jobs or resource limits
-2. **Performance**: Use appropriate scheduling algorithms for your use case
-3. **Configuration**: Check configuration file syntax and parameter values
+1. **Matplotlib Import Warning**: Install matplotlib or ignore if plots not needed
+2. **Configuration Errors**: Verify JSON syntax and required fields
+3. **Worker Pool Issues**: Check worker counts and timing values in config
 
-### Getting Help
+### Debug Tips
 
-- Check the documentation in the `docs/` directory
-- Review example configurations
-- Open an issue on the project repository
+- Use `--debug` flag for detailed event logging
+- Start with short simulation times for testing
+- Verify configuration with `sim_config.py --print`
 
-## Roadmap
+## Contributing
 
-- [ ] Core simulation engine
-- [ ] Basic scheduling algorithms
-- [ ] Resource management
-- [ ] Performance metrics
-- [ ] Web-based dashboard
-- [ ] Distributed simulation support
-- [ ] Real-time monitoring
-- [ ] Advanced scheduling algorithms
+- Fork the repository
+- Create feature branch: `git checkout -b feature-name`
+- Ensure code passes linting: `flake8 src/`
+- Submit pull request with clear description
 
 ## License
 
 [Add your license information here]
 
-## Contributing
-
-We welcome contributions! Please see our contributing guidelines for more details.
-
-## Acknowledgments
-
-- Thanks to all contributors
-- Inspired by real-world job scheduling systems
-- Built with modern Python best practices
-
 ---
 
-For more information, please refer to the documentation or contact the development team.
+For more information, examine the source code in `src/` or run the tools with `--help` for detailed usage information.

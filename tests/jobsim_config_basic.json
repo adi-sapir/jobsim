@@ -24,12 +24,12 @@
         },
         {
             "user_type": "C",
-            "user_probability": 20,
+            "user_probability": 30,
             "num_jobs": 2
         },
         {
             "user_type": "S",
-            "user_probability": 10,
+            "user_probability": 20,
             "num_jobs": 6
         }
     ],
