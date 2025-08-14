@@ -118,8 +118,10 @@ class SimState:
   def create_worker_use_time_distribution(self, run_label, suffix) -> None:
     types = sorted({j.get_server_type() for j in self.completed_jobs if j.get_server_type() is not None},
     key=lambda t: t.value)
+    print(f"Worker types: {types}")
     labels = [t.value for t in types]
-    use_by_type = [[j.get_start_execution_time() - j.get_submission_time() for j in self.completed_jobs if j.get_server_type() == t] for t in types]
+    use_by_type = [[j.get_start_execution_time() for j in self.completed_jobs if j.get_server_type() == t] for t in types]
+    print(f"Use by type: {use_by_type}")
     if plt:
       plt.hist(use_by_type, bins=20, stacked=True, label=labels, edgecolor='black')
       plt.xlabel('Worker Use Time (seconds)')

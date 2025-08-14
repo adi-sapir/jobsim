@@ -6,11 +6,6 @@ from typing import Optional
 import sim_config
 from debug_config import debug_print
 
-#Time constants
-MINUTE = 60
-HOUR = 60 * MINUTE
-DAY = 24 * HOUR
-
 class WorkerType(Enum):
   STANDBY = 'standby'
   DEALLOCATED = 'deallocated'
