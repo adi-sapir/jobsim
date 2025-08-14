@@ -5,25 +5,10 @@ import random
 import json
 import argparse
 from time_def import MINUTE, HOUR
-from sim_config import CONFIG
-
-
-# Job types: S - small, M - medium, L - large
-#JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
-#random.shuffle(JOB_TYPES)
-
-# JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
-# JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
-
-#Users Types (subscription types) F - free, C - creator S - studio
-# USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
-# random.shuffle(USER_TYPES)
-# USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
-# # Users requests per hour
-# LAMBDA_USERS_REQUESTS_PER_HOUR = 20
+import sim_config
 
 def generate_interarrival_time() -> int:
-  return int(random.expovariate(CONFIG.lambda_users_requests_per_hour / HOUR))
+  return int(random.expovariate(sim_config.CONFIG.lambda_users_requests_per_hour / HOUR))
 
 def parse_duration_hms(value: str) -> int:
   parts = value.split(":")
@@ -44,6 +29,8 @@ class Job:
     self.user_type = user_type
     self.submission_time = submission_time
     self.start_execution_time = start_execution_time
+    self.server_type = None
+    self.server_id = None
 
   def to_dict(self):
     return {
@@ -51,20 +38,21 @@ class Job:
       'type': self.type,
       'user_type': self.user_type,
       'submission_time': self.submission_time,
-      'start_execution_time': self.start_execution_time
+      'start_execution_time': self.start_execution_time,
+      'server_type': self.server_type
     }
 
   def to_json(self):
     return json.dumps(self.to_dict())
 
   def __str__(self):
-    return f"Job(id={self.id}, type={self.type}, user_type={self.user_type}, submission_time={self.submission_time}, start_execution_time={self.start_execution_time})"
+    return f"Job(id={self.id}, type={self.type}, user_type={self.user_type}, submission_time={self.submission_time}, start_execution_time={self.start_execution_time}, server_type={self.server_type}, server_id={self.server_id})"
 
   def __repr__(self):
     return self.__str__()
 
   def get_execution_duration(self):
-    return CONFIG.get_job_execution_duration(self.type)
+    return sim_config.CONFIG.get_job_execution_duration(self.type)
 
   def get_user_type(self):
     return self.user_type
@@ -84,6 +72,18 @@ class Job:
   def set_start_execution_time(self, start_execution_time: int):
     self.start_execution_time = start_execution_time
   
+  def set_server_type(self, server_type: str):
+    self.server_type = server_type
+  
+  def get_server_type(self):
+    return self.server_type
+  
+  def set_server_id(self, server_id: int):
+    self.server_id = server_id
+  
+  def get_server_id(self):
+    return self.server_id
+  
 class JobGenerator:
   def __init__(self):
     self.user_type_index = 0
@@ -92,7 +92,7 @@ class JobGenerator:
     self.jobs: list[Job] = []
 
   def generate_job(self, user_request_time: int, user_type: str) -> Job:
-    job_type = CONFIG.job_types[self.job_type_index % len(CONFIG.job_types)]
+    job_type = sim_config.CONFIG.job_types[self.job_type_index % len(sim_config.CONFIG.job_types)]
     self.job_type_index += 1
     job = Job(
       id=self.job_id,
@@ -103,9 +103,9 @@ class JobGenerator:
     return job
 
   def handle_user_request(self, user_request_time: int) -> None:
-    user_type = CONFIG.user_types[self.user_type_index % len(CONFIG.user_types)]
+    user_type = sim_config.CONFIG.user_types[self.user_type_index % len(sim_config.CONFIG.user_types)]
     self.user_type_index += 1
-    num_jobs = random.randint(1, CONFIG.get_num_jobs(user_type))
+    num_jobs = random.randint(1, sim_config.CONFIG.get_num_jobs(user_type))
     for _ in range(num_jobs):
       self.jobs.append(self.generate_job(user_request_time, user_type))
   

@@ -3,7 +3,8 @@ import json
 import argparse
 from enum import Enum
 from typing import Optional
-from sim_config import CONFIG
+import sim_config
+from debug_config import debug_print
 
 #Time constants
 MINUTE = 60
@@ -60,9 +61,9 @@ class Worker:
     if self.worker_type == WorkerType.STANDBY:
       return 0
     elif self.worker_type == WorkerType.DEALLOCATED:
-      return CONFIG.worker_allocate_time
+      return sim_config.CONFIG.worker_allocate_time
     elif self.worker_type == WorkerType.COLD:
-      return CONFIG.worker_startup_time
+      return sim_config.CONFIG.worker_startup_time
 
   def get_worker_shutdown_time(self):
     if self.worker_type == WorkerType.STANDBY:
@@ -70,23 +71,25 @@ class Worker:
     elif self.worker_type == WorkerType.DEALLOCATED:
       return 0
     elif self.worker_type == WorkerType.COLD:
-      return CONFIG.worker_shutdown_time
+      return sim_config.CONFIG.worker_shutdown_time
 
 class WorkerPool:
   def __init__(self):
     self.workers: list[Worker] = []
     worker_idx = 0
-    for _ in range(CONFIG.standby_workers):
+    debug_print(f"Initializing WorkerPool with {sim_config.CONFIG.standby_workers} standby workers, {sim_config.CONFIG.max_deallocated_workers} deallocated workers, and {sim_config.CONFIG.max_cold_workers} cold workers") 
+    for _ in range(sim_config.CONFIG.standby_workers):
       worker = Worker(WorkerType.STANDBY, worker_idx)
       worker.set_worker_status(WorkerStatus.READY)
       self.workers.append(worker)
       worker_idx += 1
-    for _ in range(CONFIG.max_deallocated_workers):
+    for _ in range(sim_config.CONFIG.max_deallocated_workers):
       self.workers.append(Worker(WorkerType.DEALLOCATED, worker_idx))
       worker_idx += 1
-    for _ in range(CONFIG.max_cold_workers):
+    for _ in range(sim_config.CONFIG.max_cold_workers):
       self.workers.append(Worker(WorkerType.COLD, worker_idx))
       worker_idx += 1
+    debug_print(f"WorkerPool initialized: {self.workers}")
 
   def add_worker(self, worker: Worker):
     self.workers.append(worker)

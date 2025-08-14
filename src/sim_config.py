@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass, asdict, field
 from typing import List
 import random
+from debug_config import debug_print
 
 @dataclass
 class JobDefinition:
@@ -19,9 +20,9 @@ class UserDefinition:
 @dataclass
 class SimulationConfig:
     job_definitions: List[JobDefinition] = field(default_factory=lambda: [
-        JobDefinition(job_type="S", job_execution_duration=10, job_probability=10),
-        JobDefinition(job_type="M", job_execution_duration=40, job_probability=70),
-        JobDefinition(job_type="L", job_execution_duration=90, job_probability=20),
+        JobDefinition(job_type="S", job_execution_duration=22, job_probability=10),
+        JobDefinition(job_type="M", job_execution_duration=252, job_probability=70),
+        JobDefinition(job_type="L", job_execution_duration=385, job_probability=20),
     ])
     user_definitions: List[UserDefinition] = field(default_factory=lambda: [
         UserDefinition(user_type="F", user_probability=10, num_jobs=1),
@@ -122,6 +123,8 @@ def load_config(filepath: str):
     """Load and overwrite the global CONFIG from a file."""
     global CONFIG
     CONFIG = SimulationConfig.load_from_json(filepath)
+    debug_print(f"Loaded config from {filepath}")
+    debug_print(json.dumps(CONFIG.to_full_dict(), indent=4))
 
 
 def save_config(filepath: str):
