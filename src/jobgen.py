@@ -5,24 +5,25 @@ import random
 import json
 import argparse
 from time_def import MINUTE, HOUR
+from sim_config import CONFIG
 
 
 # Job types: S - small, M - medium, L - large
-JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
-random.shuffle(JOB_TYPES)
+#JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
+#random.shuffle(JOB_TYPES)
 
-JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
-JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
+# JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
+# JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
 
 #Users Types (subscription types) F - free, C - creator S - studio
-USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
-random.shuffle(USER_TYPES)
-USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
+# USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
+# random.shuffle(USER_TYPES)
+# USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
 # # Users requests per hour
-LAMBDA_USERS_REQUESTS_PER_HOUR = 20
+# LAMBDA_USERS_REQUESTS_PER_HOUR = 20
 
 def generate_interarrival_time() -> int:
-  return int(random.expovariate(LAMBDA_USERS_REQUESTS_PER_HOUR / HOUR))
+  return int(random.expovariate(CONFIG.lambda_users_requests_per_hour / HOUR))
 
 def parse_duration_hms(value: str) -> int:
   parts = value.split(":")
@@ -63,10 +64,7 @@ class Job:
     return self.__str__()
 
   def get_execution_duration(self):
-    return JOB_EXECUTION_DURATIONS[self.type]
-
-  def get_duration(self):
-    return JOB_DURATIONS[self.type]
+    return CONFIG.get_job_execution_duration(self.type)
 
   def get_user_type(self):
     return self.user_type
@@ -94,7 +92,7 @@ class JobGenerator:
     self.jobs: list[Job] = []
 
   def generate_job(self, user_request_time: int, user_type: str) -> Job:
-    job_type = JOB_TYPES[self.job_type_index % len(JOB_TYPES)]
+    job_type = CONFIG.job_types[self.job_type_index % len(CONFIG.job_types)]
     self.job_type_index += 1
     job = Job(
       id=self.job_id,
@@ -105,9 +103,9 @@ class JobGenerator:
     return job
 
   def handle_user_request(self, user_request_time: int) -> None:
-    user_type = USER_TYPES[self.user_type_index % len(USER_TYPES)]
+    user_type = CONFIG.user_types[self.user_type_index % len(CONFIG.user_types)]
     self.user_type_index += 1
-    num_jobs = random.randint(1, USER_ALLOWED_JOBS[user_type])
+    num_jobs = random.randint(1, CONFIG.get_num_jobs(user_type))
     for _ in range(num_jobs):
       self.jobs.append(self.generate_job(user_request_time, user_type))
   

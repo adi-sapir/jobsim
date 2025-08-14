@@ -3,19 +3,12 @@ import json
 import argparse
 from enum import Enum
 from typing import Optional
+from sim_config import CONFIG
 
 #Time constants
 MINUTE = 60
 HOUR = 60 * MINUTE
 DAY = 24 * HOUR
-
-# Job resources
-STANDABY_WORKERS = 4
-MAX_DEALLOCATED_WORKERS = 10
-MAX_COLD_WORKERS = 30
-WORKER_STARTUP_TIME = 10 * MINUTE
-WORKER_SHUTDOWN_TIME = 30 * MINUTE
-WORKER_ALLOCATE_TIME = 3 * MINUTE
 
 class WorkerType(Enum):
   STANDBY = 'standby'
@@ -67,9 +60,9 @@ class Worker:
     if self.worker_type == WorkerType.STANDBY:
       return 0
     elif self.worker_type == WorkerType.DEALLOCATED:
-      return WORKER_ALLOCATE_TIME
+      return CONFIG.worker_allocate_time
     elif self.worker_type == WorkerType.COLD:
-      return WORKER_STARTUP_TIME
+      return CONFIG.worker_startup_time
 
   def get_worker_shutdown_time(self):
     if self.worker_type == WorkerType.STANDBY:
@@ -77,21 +70,21 @@ class Worker:
     elif self.worker_type == WorkerType.DEALLOCATED:
       return 0
     elif self.worker_type == WorkerType.COLD:
-      return WORKER_SHUTDOWN_TIME
+      return CONFIG.worker_shutdown_time
 
 class WorkerPool:
   def __init__(self):
     self.workers: list[Worker] = []
     worker_idx = 0
-    for _ in range(STANDABY_WORKERS):
+    for _ in range(CONFIG.standby_workers):
       worker = Worker(WorkerType.STANDBY, worker_idx)
       worker.set_worker_status(WorkerStatus.READY)
       self.workers.append(worker)
       worker_idx += 1
-    for _ in range(MAX_DEALLOCATED_WORKERS):
+    for _ in range(CONFIG.max_deallocated_workers):
       self.workers.append(Worker(WorkerType.DEALLOCATED, worker_idx))
       worker_idx += 1
-    for _ in range(MAX_COLD_WORKERS):
+    for _ in range(CONFIG.max_cold_workers):
       self.workers.append(Worker(WorkerType.COLD, worker_idx))
       worker_idx += 1
 

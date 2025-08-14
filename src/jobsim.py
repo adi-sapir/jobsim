@@ -7,6 +7,7 @@ from jobgen import JobGenerator, Job
 from time_def import MINUTE, HOUR
 from debug_config import debug_print, set_debug, get_debug
 import matplotlib.pyplot as plt
+from sim_config import CONFIG
 
 
 def parse_duration_hms(value: str) -> int:
