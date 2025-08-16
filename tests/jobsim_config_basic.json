@@ -2,16 +2,19 @@
     "job_definitions": [
         {
             "job_type": "S",
+            "job_duration": 600,
             "job_execution_duration": 60,
             "job_probability": 40
         },
         {
             "job_type": "M",
+            "job_duration": 3600,
             "job_execution_duration": 360,
             "job_probability": 40
         },
         {
             "job_type": "L",
+            "job_duration": 5400,
             "job_execution_duration": 385,
             "job_probability": 20
         }

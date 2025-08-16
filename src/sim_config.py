@@ -8,6 +8,7 @@ from debug_config import debug_print
 @dataclass
 class JobDefinition:
     job_type: str
+    job_duration: int
     job_execution_duration: int
     job_probability: int
 
@@ -20,9 +21,9 @@ class UserDefinition:
 @dataclass
 class SimulationConfig:
     job_definitions: List[JobDefinition] = field(default_factory=lambda: [
-        JobDefinition(job_type="S", job_execution_duration=22, job_probability=10),
-        JobDefinition(job_type="M", job_execution_duration=252, job_probability=70),
-        JobDefinition(job_type="L", job_execution_duration=385, job_probability=20),
+        JobDefinition(job_type="S", job_duration=300, job_execution_duration=22, job_probability=10),
+        JobDefinition(job_type="M", job_duration=600, job_execution_duration=252, job_probability=70),
+        JobDefinition(job_type="L", job_duration=5400, job_execution_duration=385, job_probability=20),
     ])
     user_definitions: List[UserDefinition] = field(default_factory=lambda: [
         UserDefinition(user_type="F", user_probability=10, num_jobs=1),

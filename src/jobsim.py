@@ -10,6 +10,7 @@ from jobgen import JobGenerator, Job
 from datetime import datetime
 import os
 import sim_config 
+from sim_histogram import SimHistogram
 
 
 def parse_duration_hms(value: str) -> int:
@@ -101,64 +102,31 @@ class SimState:
       elif event.event_type == EventType.WORKER_TO_POOL:
         self.handle_worker_to_pool(event.timestamp, event.data)
 
-  def create_submission_time_distribution(self, run_label, suffix) -> None:
-    types = sorted({j.get_type() for j in self.completed_jobs})
-    sub_by_type = [[j.get_submission_time() for j in self.completed_jobs if j.get_type() == t] for t in types]
-    
-    if plt:
-      plt.hist(sub_by_type, bins=20, stacked=True, label=types, edgecolor='black')
-      plt.xlabel('Submission Time (seconds)')
-      plt.ylabel('Number of Jobs')
-      plt.title(f'Submission Time Distribution{run_label}')
-      plt.legend(title='Job Type')
-      plt.savefig(f'submission_time_distribution{suffix}.png')
-      plt.show()
-      plt.clf()
-    
-  def create_worker_use_time_distribution(self, run_label, suffix) -> None:
-    types = sorted({j.get_server_type() for j in self.completed_jobs if j.get_server_type() is not None},
-    key=lambda t: t.value)
-    print(f"Worker types: {types}")
-    labels = [t.value for t in types]
-    use_by_type = [[j.get_start_execution_time() for j in self.completed_jobs if j.get_server_type() == t] for t in types]
-    print(f"Use by type: {use_by_type}")
-    if plt:
-      plt.hist(use_by_type, bins=20, stacked=True, label=labels, edgecolor='black')
-      plt.xlabel('Worker Use Time (seconds)')
-      plt.ylabel('Number of Jobs')
-      plt.title(f'Worker Use Time Distribution{run_label}')
-      plt.legend(title='Worker Type')
-      plt.savefig(f'worker_use_time_distribution{suffix}.png')
-      plt.show()
-      plt.clf()
-  
-  def create_wait_time_distribution(self, run_label, suffix) -> None:
-    types = sorted({j.get_type() for j in self.completed_jobs}) 
-    wait_by_type = [[j.get_start_execution_time() - j.get_submission_time()
-                      for j in self.completed_jobs if j.get_type() == t] for t in types]
-    if plt:
-      plt.hist(wait_by_type, bins=20, stacked=True, label=types, edgecolor='black')
-      plt.xlabel('Wait Time (seconds)')
-      plt.ylabel('Number of Jobs')
-      plt.title(f'Wait Time Distribution{run_label}')
-      plt.legend(title='Job Type')
-      plt.savefig(f'wait_time_distribution{suffix}.png')
-      plt.show()
-      plt.clf()
+  def print_submitted_jobs(self) -> None:
+    print("Submitted Jobs distribution over time (seconds):")
+    print("================================================")
+    histogram = SimHistogram([j.get_submission_time() for j in self.completed_jobs])
+    histogram.print_histogram()
   
   def print_wait_times(self) -> None:
     wait_times = [j.get_start_execution_time() - j.get_submission_time()
       for j in self.completed_jobs]
     if wait_times:
+      print("Wait Time distribution (seconds):")
+      print("=================================")
       print(f"Min Wait Time: {min(wait_times):.1f} sec")
       print(f"Avg Wait Time: {sum(wait_times)/len(wait_times):.1f} sec")
       print(f"Max Wait Time: {max(wait_times):.1f} sec")
-  
+      histogram = SimHistogram(wait_times)
+      histogram.print_histogram()
+    
   def print_workers_used(self) -> None:
     worker_types = sorted(
       {j.get_server_type() for j in self.completed_jobs if j.get_server_type() is not None},
       key=lambda t: t.value
     )
+    print("Workers used:")
+    print("=============")
     for wt in worker_types:
       distinct_ids = {j.get_server_id() for j in self.completed_jobs if j.get_server_type() == wt}
       print(f"Workers used ({wt.value}): {len(distinct_ids)}")
@@ -166,15 +134,15 @@ class SimState:
   def print_statistics(self) -> None:
     run_label = f" [{self.run_name}]" if getattr(self, "run_name", None) else ""
     suffix = f"_{self.run_name}" if getattr(self, "run_name", None) else ""
-    print(f"Queue size: {self.event_queue.size()}")
-    print(f"Queue: {self.event_queue}")
+    debug_print(f"Queue size: {self.event_queue.size()}")
+    debug_print(f"Queue: {self.event_queue}")
     debug_print(f"Completed jobs: {self.completed_jobs}")
-    print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
+    debug_print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
+    simlated_time = max(j.get_start_execution_time() for j in self.completed_jobs)
+    print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs in {simlated_time} seconds ")
+    self.print_submitted_jobs()
     self.print_wait_times()
     self.print_workers_used()
-    self.create_submission_time_distribution(run_label, suffix)
-    self.create_worker_use_time_distribution(run_label, suffix)
-    self.create_wait_time_distribution(run_label, suffix)
     return
 
 #run main
@@ -207,8 +175,7 @@ if __name__ == "__main__":
   sim_state.run_name = f"{base_name}-sim-{sim_duration}"
   sim_state.init_jobs_in_queue(job_generator.generate_jobs(0, sim_duration))
   #Create the event queue and initialize jobs
-  print(f"Simulation duration: {sim_duration} seconds")
-  print(f"Queue size: {sim_state.event_queue.size()}")
-  print(f"Queue: {sim_state.event_queue}")
+  print(f"Starting Simulation. Job submission duration: {sim_duration} seconds")
   sim_state.run()
+  print(f"Simulation ended")
   sim_state.print_statistics()
