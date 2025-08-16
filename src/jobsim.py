@@ -3,7 +3,7 @@ from enum import Enum
 import sys
 import argparse
 from workers_model import WorkerPool, WorkerType, WorkerStatus
-from time_def import MINUTE, HOUR
+from time_def import MINUTE, HOUR, seconds_to_hms
 from debug_config import debug_print, set_debug, get_debug
 import matplotlib.pyplot as plt
 from jobgen import JobGenerator, Job
@@ -114,23 +114,35 @@ class SimState:
     if wait_times:
       print("Wait Time distribution (seconds):")
       print("=================================")
-      print(f"Min Wait Time: {min(wait_times):.1f} sec")
-      print(f"Avg Wait Time: {sum(wait_times)/len(wait_times):.1f} sec")
-      print(f"Max Wait Time: {max(wait_times):.1f} sec")
+      print(f"Min Wait Time: {seconds_to_hms(min(wait_times))}")
+      print(f"Avg Wait Time: {seconds_to_hms(sum(wait_times)/len(wait_times))}")
+      print(f"Max Wait Time: {seconds_to_hms(max(wait_times))}")
       histogram = SimHistogram(wait_times)
       histogram.print_histogram()
     
-  def print_workers_used(self) -> None:
-    worker_types = sorted(
-      {j.get_server_type() for j in self.completed_jobs if j.get_server_type() is not None},
-      key=lambda t: t.value
-    )
+  def print_workers_stats(self) -> None:
+    workers_types_use = set()
+    workers_types_worker_ids = {}
+    workers_types_processing_time = {}
+    total_processing_time = 0
+    for j in self.completed_jobs:
+      worker_type = j.get_server_type()
+      if worker_type is not None:
+        if worker_type not in workers_types_use:
+          workers_types_use.add(worker_type)
+          workers_types_worker_ids[worker_type] = set()
+          workers_types_processing_time[worker_type] = 0
+        workers_types_worker_ids[worker_type].add(j.get_server_id())
+        workers_types_processing_time[worker_type] += j.get_execution_duration()
+        total_processing_time += j.get_execution_duration()
     print("Workers used:")
     print("=============")
-    for wt in worker_types:
-      distinct_ids = {j.get_server_id() for j in self.completed_jobs if j.get_server_type() == wt}
-      print(f"Workers used ({wt.value}): {len(distinct_ids)}")
-  
+    for wt in workers_types_use:
+      print(f"Workers used ({wt.value}): {len(workers_types_worker_ids[wt])}")
+    for wt in workers_types_use:
+      print(f"Processing time ({wt.value}): {seconds_to_hms(workers_types_processing_time[wt])}")
+    print(f"Total processing time: {seconds_to_hms(total_processing_time)}")
+
   def print_statistics(self) -> None:
     run_label = f" [{self.run_name}]" if getattr(self, "run_name", None) else ""
     suffix = f"_{self.run_name}" if getattr(self, "run_name", None) else ""
@@ -139,10 +151,13 @@ class SimState:
     debug_print(f"Completed jobs: {self.completed_jobs}")
     debug_print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
     simlated_time = max(j.get_start_execution_time() for j in self.completed_jobs)
-    print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs in {simlated_time} seconds ")
+    print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs in {seconds_to_hms(simlated_time)} ")
+    print("")
     self.print_submitted_jobs()
+    print("")
     self.print_wait_times()
-    self.print_workers_used()
+    print("")
+    self.print_workers_stats()
     return
 
 #run main
@@ -175,7 +190,7 @@ if __name__ == "__main__":
   sim_state.run_name = f"{base_name}-sim-{sim_duration}"
   sim_state.init_jobs_in_queue(job_generator.generate_jobs(0, sim_duration))
   #Create the event queue and initialize jobs
-  print(f"Starting Simulation. Job submission duration: {sim_duration} seconds")
+  print(f"Starting Simulation. Job submission duration: {seconds_to_hms(sim_duration)}")
   sim_state.run()
   print(f"Simulation ended")
   sim_state.print_statistics()
