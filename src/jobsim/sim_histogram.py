@@ -1,6 +1,6 @@
 # A text based histogram class
 from typing import List, Any, Tuple
-from debug_config import debug_print
+from .debug_config import debug_print
 
 class SimHistogramBin:
     def __init__(self, min_val: int, max_val: int, print_scale_factor: float):

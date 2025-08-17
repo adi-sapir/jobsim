@@ -4,9 +4,9 @@
 import random
 import json
 import argparse
-from time_def import MINUTE, HOUR
+from .time_def import MINUTE, HOUR, parse_duration_hms
 from typing import Optional, Dict
-import sim_config
+from . import sim_config
 
 
 # Job types: S - small, M - medium, L - large
@@ -26,17 +26,7 @@ LAMBDA_USERS_REQUESTS_PER_HOUR = 100
 def generate_interarrival_time() -> int:
   return int(random.expovariate(sim_config.CONFIG.lambda_users_requests_per_hour / HOUR))
 
-def parse_duration_hms(value: str) -> int:
-  parts = value.split(":")
-  if len(parts) != 3:
-    raise argparse.ArgumentTypeError("duration must be in H:M:S format")
-  try:
-    hours, minutes, seconds = (int(p) for p in parts)
-  except ValueError:
-    raise argparse.ArgumentTypeError("duration components must be integers")
-  if hours < 0 or not (0 <= minutes < 60) or not (0 <= seconds < 60):
-    raise argparse.ArgumentTypeError("duration must satisfy H>=0, 0<=M<60, 0<=S<60")
-  return hours * HOUR + minutes * MINUTE + seconds
+
 
 class Job:
   def __init__(self, id, type, user_type, submission_time, start_execution_time=0):
@@ -143,7 +133,7 @@ class JobGenerator:
       job_json = job.to_dict()
       print(job_json)
 
-if __name__ == "__main__":
+def main():
   parser = argparse.ArgumentParser(description="Generate jobs for a simulation time window")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
   parser.add_argument("--config", "-c", metavar="FILE", help="Load simulation configuration from JSON file")
@@ -156,6 +146,9 @@ if __name__ == "__main__":
   generator = JobGenerator()
   generator.generate_jobs(0, args.duration)
   generator.print_jobs()
+
+if __name__ == "__main__":
+  main()
 
 
 

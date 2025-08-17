@@ -1,28 +1,18 @@
-from event_queue import EventQueue, Event
+from .event_queue import EventQueue, Event
 from enum import Enum
 import sys
 import argparse
-from workers_model import WorkerPool, WorkerType, WorkerStatus
-from time_def import MINUTE, HOUR, seconds_to_hms
-from debug_config import debug_print, set_debug, get_debug
-from jobgen import JobGenerator, Job
+from .workers_model import WorkerPool, WorkerType, WorkerStatus
+from .time_def import MINUTE, HOUR, seconds_to_hms, parse_duration_hms
+from .debug_config import debug_print, set_debug, get_debug
+from .jobgen import JobGenerator, Job
 from datetime import datetime
 import os
-import sim_config 
-from sim_histogram import SimHistogram, SimHistogramStacked
+from . import sim_config
+from .sim_histogram import SimHistogram, SimHistogramStacked
 
 
-def parse_duration_hms(value: str) -> int:
-  parts = value.split(":")
-  if len(parts) != 3:
-    raise argparse.ArgumentTypeError("duration must be in H:M:S format")
-  try:
-    hours, minutes, seconds = (int(p) for p in parts)
-  except ValueError:
-    raise argparse.ArgumentTypeError("duration components must be integers")
-  if hours < 0 or not (0 <= minutes < 60) or not (0 <= seconds < 60):
-    raise argparse.ArgumentTypeError("duration must satisfy H>=0, 0<=M<60, 0<=S<60")
-  return hours * HOUR + minutes * MINUTE + seconds
+
 
 
 #Event Types
@@ -176,8 +166,7 @@ class SimState:
     self.print_workers_stats()
     return
 
-#run main
-if __name__ == "__main__":
+def main():
   # Parse CLI duration H:M:S and optional config
   parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
@@ -191,7 +180,7 @@ if __name__ == "__main__":
 
   sim_duration = args.duration
   # Load config if provided and create generator with it
-  from sim_config import load_config, CONFIG
+  from .sim_config import load_config, CONFIG
   if args.config:
     load_config(args.config)
   job_generator = JobGenerator()
@@ -210,3 +199,6 @@ if __name__ == "__main__":
   sim_state.run()
   print(f"Simulation ended")
   sim_state.print_statistics()
+
+if __name__ == "__main__":
+  main()

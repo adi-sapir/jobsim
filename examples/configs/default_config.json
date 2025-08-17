@@ -1,0 +1,46 @@
+{
+  "job_definitions": [
+    {
+      "job_type": "web",
+      "job_probability": 0.4,
+      "job_execution_duration": 300
+    },
+    {
+      "job_type": "batch",
+      "job_probability": 0.35,
+      "job_execution_duration": 1800
+    },
+    {
+      "job_type": "interactive",
+      "job_probability": 0.25,
+      "job_execution_duration": 600
+    }
+  ],
+  "user_definitions": [
+    {
+      "user_type": "developer",
+      "user_probability": 0.6,
+      "num_jobs": 2
+    },
+    {
+      "user_type": "researcher",
+      "user_probability": 0.3,
+      "num_jobs": 1
+    },
+    {
+      "user_type": "admin",
+      "user_probability": 0.1,
+      "num_jobs": 3
+    }
+  ],
+  "lambda_users_requests_per_hour": 10,
+  "num_standby_workers": 5,
+  "num_deallocated_workers": 3,
+  "num_cold_workers": 2,
+  "standby_activation_time": 60,
+  "deallocated_activation_time": 300,
+  "cold_activation_time": 900,
+  "standby_shutdown_time": 120,
+  "deallocated_shutdown_time": 600,
+  "cold_shutdown_time": 1800
+}

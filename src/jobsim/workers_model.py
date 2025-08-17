@@ -3,8 +3,8 @@ import json
 import argparse
 from enum import Enum
 from typing import Optional
-import sim_config
-from debug_config import debug_print
+from . import sim_config
+from .debug_config import debug_print
 
 class WorkerType(Enum):
   STANDBY = 'standby'

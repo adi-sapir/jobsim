@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass, asdict, field
 from typing import List
 import random
-from debug_config import debug_print
+from .debug_config import debug_print
 
 @dataclass
 class JobDefinition:
@@ -133,7 +133,7 @@ def save_config(filepath: str):
     CONFIG.save_to_json(filepath)
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Simulation configuration utility")
@@ -152,3 +152,6 @@ if __name__ == "__main__":
 
     # Always print full configuration at the end
     print(json.dumps(CONFIG.to_full_dict(), indent=4))
+
+if __name__ == "__main__":
+    main()
