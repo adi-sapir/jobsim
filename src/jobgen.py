@@ -5,7 +5,23 @@ import random
 import json
 import argparse
 from time_def import MINUTE, HOUR
+from typing import Optional, Dict
 import sim_config
+
+
+# Job types: S - small, M - medium, L - large
+JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
+random.shuffle(JOB_TYPES)
+
+JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
+JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
+
+#Users Types (subscription types) F - free, C - creator S - studio
+USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
+random.shuffle(USER_TYPES)
+USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
+# # Users requests per hour
+LAMBDA_USERS_REQUESTS_PER_HOUR = 100
 
 def generate_interarrival_time() -> int:
   return int(random.expovariate(sim_config.CONFIG.lambda_users_requests_per_hour / HOUR))
@@ -39,7 +55,8 @@ class Job:
       'user_type': self.user_type,
       'submission_time': self.submission_time,
       'start_execution_time': self.start_execution_time,
-      'server_type': self.server_type
+      'server_type': self.server_type,
+      'server_id': self.server_id
     }
 
   def to_json(self):
@@ -81,7 +98,7 @@ class Job:
   def set_server_id(self, server_id: int):
     self.server_id = server_id
   
-  def get_server_id(self):
+  def get_server_id(self) -> int:
     return self.server_id
   
 class JobGenerator:
@@ -129,7 +146,12 @@ class JobGenerator:
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Generate jobs for a simulation time window")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
+  parser.add_argument("--config", "-c", metavar="FILE", help="Load simulation configuration from JSON file")
   args = parser.parse_args()
+
+  # Load config if provided
+  if args.config:
+    sim_config.load_config(args.config)
 
   generator = JobGenerator()
   generator.generate_jobs(0, args.duration)

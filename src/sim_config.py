@@ -137,7 +137,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Simulation configuration utility")
-    parser.add_argument("--load", metavar="FILE", help="Load configuration from JSON file")
+    parser.add_argument("--load", "-c", metavar="FILE", help="Load configuration from JSON file")
     parser.add_argument("--save", metavar="FILE", help="Save current configuration to JSON file")
     parser.add_argument("--print", action="store_true", help="Print current configuration to stdout")
     args = parser.parse_args()
