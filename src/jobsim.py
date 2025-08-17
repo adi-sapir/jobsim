@@ -9,7 +9,7 @@ from jobgen import JobGenerator, Job
 from datetime import datetime
 import os
 import sim_config 
-from sim_histogram import SimHistogram
+from sim_histogram import SimHistogram, SimHistogramStacked
 
 
 def parse_duration_hms(value: str) -> int:
@@ -102,9 +102,18 @@ class SimState:
         self.handle_worker_to_pool(event.timestamp, event.data)
 
   def print_submitted_jobs(self) -> None:
+    jobs_types = {}
+    for j in self.completed_jobs:
+      if j.get_type() not in jobs_types:
+        jobs_types[j.get_type()] = 0
+      jobs_types[j.get_type()] += 1
+    print("Submitted Jobs distribution:")
+    print("============================")
+    for jt in jobs_types:
+      print(f"{jt}: {jobs_types[jt]}")
     print("Submitted Jobs distribution over time (seconds):")
     print("================================================")
-    histogram = SimHistogram([j.get_submission_time() for j in self.completed_jobs])
+    histogram = SimHistogramStacked([(j.get_submission_time(), j.get_type()) for j in self.completed_jobs])
     histogram.print_histogram()
   
   def print_wait_times(self) -> None:
@@ -141,6 +150,14 @@ class SimState:
     for wt in workers_types_use:
       print(f"Processing time ({wt.value}): {seconds_to_hms(workers_types_processing_time[wt])}")
     print(f"Total processing time: {seconds_to_hms(total_processing_time)}")
+    histogram = SimHistogramStacked(
+        [(j.get_start_execution_time(),
+          j.get_server_type().value + "-" + str(j.get_server_id())
+          ) for j in self.completed_jobs
+          if j.get_server_type() is not None])
+    print("Workers usage distribution:")
+    print("===========================")
+    histogram.print_histogram()
 
   def print_statistics(self) -> None:
     run_label = f" [{self.run_name}]" if getattr(self, "run_name", None) else ""
