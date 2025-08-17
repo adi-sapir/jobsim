@@ -5,7 +5,6 @@ import argparse
 from workers_model import WorkerPool, WorkerType, WorkerStatus
 from time_def import MINUTE, HOUR, seconds_to_hms
 from debug_config import debug_print, set_debug, get_debug
-import matplotlib.pyplot as plt
 from jobgen import JobGenerator, Job
 from datetime import datetime
 import os
