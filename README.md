@@ -130,10 +130,15 @@ Final name always includes `-sim-<seconds>` suffix for unique identification.
 ## Outputs
 
 ### Console Output
-- Simulation duration and queue statistics
-- Total jobs processed
-- Wait time statistics (min/avg/max)
-- Worker usage counts per type
+The simulator provides comprehensive statistics including:
+
+- **Simulation Summary**: Total jobs processed and simulation duration
+- **Job Distribution**: Histogram of job submission times over the simulation period
+- **Wait Time Analysis**: Min/avg/max wait times with distribution histogram
+- **Worker Usage Statistics**: 
+  - Distinct workers used per worker type
+  - Processing time per worker type
+  - Total processing time across all workers
 
 ### Generated Plots (if matplotlib available)
 - **Submission Time Distribution**: Stacked histogram by job type
@@ -141,6 +146,32 @@ Final name always includes `-sim-<seconds>` suffix for unique identification.
 - **Worker Use Time Distribution**: Stacked histogram by worker type
 
 Files are named: `{plot_type}_{run_name}.png`
+
+### Sample Output Format
+```
+Run [baseline-sim-3600]: Simulated 150 jobs in 1:00:00
+
+Submitted Jobs distribution over time (seconds):
+================================================
+[Histogram display]
+
+Wait Time distribution (seconds):
+=================================
+Min Wait Time: 0:00:00
+Avg Wait Time: 0:02:15
+Max Wait Time: 0:08:30
+[Histogram display]
+
+Workers used:
+=============
+Workers used (standby): 2
+Workers used (deallocated): 5
+Workers used (cold): 3
+Processing time (standby): 0:45:20
+Processing time (deallocated): 1:23:15
+Processing time (cold): 0:51:25
+Total processing time: 3:00:00
+```
 
 ## Event Queue Implementation
 
@@ -172,6 +203,7 @@ Enable debug output with `--debug` flag to see:
 - Worker state transitions
 - Queue management operations
 - Detailed timing information
+- Worker pool initialization details
 
 ## Performance Characteristics
 
@@ -214,6 +246,7 @@ The `tests/` directory contains:
 - Use `--debug` flag for detailed event logging
 - Start with short simulation times for testing
 - Verify configuration with `sim_config.py --print`
+- Check worker pool initialization messages in debug mode
 
 ## Contributing
 
