@@ -3,8 +3,8 @@ JobSim - A discrete event simulation system for job execution
 """
 
 __version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__author__ = "Adi Sapir"
+__email__ = "adi.sapir5@gmail.com"
 
 from .jobsim import SimState
 from .jobgen import JobGenerator
