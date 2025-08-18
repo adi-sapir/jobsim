@@ -2,7 +2,7 @@ from .event_queue import EventQueue, Event
 from enum import Enum
 import sys
 import argparse
-from .workers_model import WorkerPool, WorkerType, WorkerStatus
+from .workers_model import WorkerPool, WorkerStatus, POOL_PROPERTIES
 from .time_def import MINUTE, HOUR, seconds_to_hms, parse_duration_hms
 from .debug_config import debug_print, set_debug, get_debug, is_debug_enabled, is_trace_enabled, is_full_debug_enabled, full_debug_print, trace_print
 from .jobgen import JobGenerator, Job
@@ -139,13 +139,13 @@ class SimState:
     print("Workers used:")
     print("=============")
     for wt in workers_types_use:
-      print(f"Workers used ({wt.value}): {len(workers_types_worker_ids[wt])}")
+      print(f"Workers used ({wt}): {len(workers_types_worker_ids[wt])}")
     for wt in workers_types_use:
-      print(f"Processing time ({wt.value}): {seconds_to_hms(workers_types_processing_time[wt])}")
+      print(f"Processing time ({wt}): {seconds_to_hms(workers_types_processing_time[wt])}")
     print(f"Total processing time: {seconds_to_hms(total_processing_time)}")
     histogram = SimHistogramStacked(
         [(j.get_start_execution_time(),
-          j.get_server_type().value + "-" + str(j.get_server_id())
+          j.get_server_type() + "-" + str(j.get_server_id())
           ) for j in self.completed_jobs
           if j.get_server_type() is not None])
     print("Workers usage distribution:")
@@ -208,5 +208,4 @@ def main():
   sim_state.print_statistics()
 
 if __name__ == "__main__":
-  print("this is the new version of the jobsim")
   main()

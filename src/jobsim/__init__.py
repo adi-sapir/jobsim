@@ -8,7 +8,7 @@ __email__ = "adi.sapir5@gmail.com"
 
 from .jobsim import SimState
 from .jobgen import JobGenerator
-from .workers_model import WorkerPool, WorkerType, WorkerStatus
+from .workers_model import WorkerPool, WorkerStatus, POOL_PROPERTIES
 from .sim_config import SimulationConfig, CONFIG, load_config
 from .event_queue import EventQueue, Event
 from .sim_histogram import SimHistogram
@@ -19,8 +19,8 @@ __all__ = [
     "SimState",
     "JobGenerator", 
     "WorkerPool",
-    "WorkerType",
     "WorkerStatus",
+    "POOL_PROPERTIES",
     "SimulationConfig",
     "CONFIG",
     "load_config",

@@ -19,14 +19,6 @@ class UserDefinition:
     num_jobs: int
 
 @dataclass
-class WorkerDefinition:
-    worker_type: str
-    worker_startup_time: int
-    worker_shutdown_time: int
-    pool_size: int
-    pool_priority: int
-
-@dataclass
 class SimulationConfig:
     job_definitions: List[JobDefinition] = field(default_factory=lambda: [
         JobDefinition(job_type="S", job_duration=300, job_execution_duration=22, job_probability=10),
@@ -38,18 +30,13 @@ class SimulationConfig:
         UserDefinition(user_type="C", user_probability=70, num_jobs=2),
         UserDefinition(user_type="S", user_probability=20, num_jobs=6),
     ])
-    worker_definitions: List[WorkerDefinition] = field(default_factory=lambda: [
-        WorkerDefinition(worker_type="STANDBY", worker_startup_time=10 * 60, worker_shutdown_time=30 * 60, pool_size=2, pool_priority=1),
-        WorkerDefinition(worker_type="DEALLOCATED", worker_startup_time=10 * 60, worker_shutdown_time=30 * 60, pool_size=10, pool_priority=2),
-        WorkerDefinition(worker_type="COLD", worker_startup_time=10 * 60, worker_shutdown_time=30 * 60, pool_size=30, pool_priority=30),
-    ])
     lambda_users_requests_per_hour: int = 20
-    #standby_workers: int = 4
-    #max_deallocated_workers: int = 10
-    #max_cold_workers: int = 30
-    #worker_startup_time: int = 10 * 60
-    #worker_shutdown_time: int = 30 * 60
-    #worker_allocate_time: int = 3 * 60
+    standby_workers: int = 4
+    max_deallocated_workers: int = 10
+    max_cold_workers: int = 30
+    worker_startup_time: int = 10 * 60
+    worker_shutdown_time: int = 30 * 60
+    worker_allocate_time: int = 3 * 60
     #calculated fields
     job_types: str = field(init=False, repr=False)
     user_types: str = field(init=False, repr=False)
@@ -63,11 +50,6 @@ class SimulationConfig:
         self.user_definitions = [
             ud if isinstance(ud, UserDefinition) else UserDefinition(**ud)
             for ud in self.user_definitions
-        ]
-        # Normalize worker_definitions to dataclass instances
-        self.worker_definitions = [
-            wd if isinstance(wd, WorkerDefinition) else WorkerDefinition(**wd)
-            for wd in self.worker_definitions
         ]
         self.job_types = "".join([job.job_type * job.job_probability for job in self.job_definitions])
         chars = list(self.job_types)

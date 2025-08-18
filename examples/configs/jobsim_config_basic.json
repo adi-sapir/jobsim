@@ -36,11 +36,28 @@
             "num_jobs": 6
         }
     ],
-    "lambda_users_requests_per_hour": 10,
-    "standby_workers": 2,
-    "max_deallocated_workers": 10,
-    "max_cold_workers": 30,
-    "worker_startup_time": 600,
-    "worker_shutdown_time": 1800,
-    "worker_allocate_time": 180
+    "worker_definitions": [
+        {
+            "worker_type": "STANDBY",
+            "worker_startup_time": 0,
+            "worker_shutdown_time": 0,
+            "pool_size": 2,
+            "pool_priority": 1
+        },
+        {
+            "worker_type": "DEALLOCATED",
+            "worker_startup_time": 180,
+            "worker_shutdown_time": 0,
+            "pool_size": 10,
+            "pool_priority": 2
+        },
+        {
+            "worker_type": "COLD",
+            "worker_startup_time": 600,
+            "worker_shutdown_time": 1800,
+            "pool_size": 30,
+            "pool_priority": 3
+        }
+    ],
+    "lambda_users_requests_per_hour": 10
 }
