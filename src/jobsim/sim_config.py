@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass, asdict, field
 from typing import List
 import random
-from .debug_config import debug_print
+from .debug_config import debug_print, set_debug, full_debug_print
 
 @dataclass
 class JobDefinition:
@@ -124,8 +124,8 @@ def load_config(filepath: str):
     """Load and overwrite the global CONFIG from a file."""
     global CONFIG
     CONFIG = SimulationConfig.load_from_json(filepath)
-    debug_print(f"Loaded config from {filepath}")
-    debug_print(json.dumps(CONFIG.to_full_dict(), indent=4))
+    full_debug_print(f"Loaded config from {filepath}")
+    full_debug_print(json.dumps(CONFIG.to_full_dict(), indent=4))
 
 
 def save_config(filepath: str):
@@ -140,7 +140,12 @@ def main():
     parser.add_argument("--load", "-c", metavar="FILE", help="Load configuration from JSON file")
     parser.add_argument("--save", metavar="FILE", help="Save current configuration to JSON file")
     parser.add_argument("--print", action="store_true", help="Print current configuration to stdout")
+    parser.add_argument("--debug", "-debug", choices=["trace", "full"], metavar="LEVEL", help="Enable debug output: 'trace' for basic info, 'full' for detailed output")
     args = parser.parse_args()
+
+    # Set debug level if provided
+    if args.debug:
+        set_debug(args.debug)
 
     # Load if requested
     if args.load:

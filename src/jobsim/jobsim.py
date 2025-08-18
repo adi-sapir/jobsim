@@ -4,7 +4,7 @@ import sys
 import argparse
 from .workers_model import WorkerPool, WorkerType, WorkerStatus
 from .time_def import MINUTE, HOUR, seconds_to_hms, parse_duration_hms
-from .debug_config import debug_print, set_debug, get_debug
+from .debug_config import debug_print, set_debug, get_debug, is_debug_enabled, is_trace_enabled, is_full_debug_enabled, full_debug_print, trace_print
 from .jobgen import JobGenerator, Job
 from datetime import datetime
 import os
@@ -55,28 +55,31 @@ class SimState:
       job.set_server_id(worker.get_worker_id())
       self.completed_jobs.append(job)
       self.event_queue.push(job_submitted_time + job.get_execution_duration(), EventType.WORKER_DONE, worker)
-      debug_print(f"{job_submitted_time}: Job submitted: {job} by worker {worker}")
+      trace_print(f"{job_submitted_time}: Job submitted: {job} by worker {worker}")
     else:
       self.pending_jobs.append(job)
-      debug_print(f"{job_submitted_time}: Job pending: {job}")
+      trace_print(f"{job_submitted_time}: Job pending: {job}")
       if (worker := self.workers_pool.invoke_worker()) is not None:
-        self.event_queue.push(job_submitted_time + worker.get_worker_activation_time(), EventType.WORKER_READY, worker)
-        debug_print(f"{job_submitted_time}: Invoking worker: {worker}")
+        trace_print(f"{job_submitted_time}: Invoking worker: {worker}")
+        if (worker.get_worker_activation_time() == 0):
+          worker.set_worker_status(WorkerStatus.READY)
+          self.handle_worker_ready(job_submitted_time, worker)
+        else:
+          self.event_queue.push(job_submitted_time + worker.get_worker_activation_time(), EventType.WORKER_READY, worker)
 
   def handle_worker_ready(self, worker_ready_time, worker) -> None:
     worker.set_worker_status(WorkerStatus.READY)
-    debug_print(f"{worker_ready_time}: Worker ready: {worker}")
+    trace_print(f"{worker_ready_time}: Worker ready: {worker}")
     if self.pending_jobs:
       job = self.pending_jobs.pop(0)
       self.handle_job_submitted(worker_ready_time, job)
-      debug_print(f"{worker_ready_time}: Job submitted: {job} by worker {worker}")
     else:
       self.event_queue.push(worker_ready_time + worker.get_worker_shutdown_time(), EventType.WORKER_TO_POOL, worker)
-      debug_print(f"{worker_ready_time}: Sending Worker to pool: {worker}")
+      trace_print(f"{worker_ready_time}: Sending Worker to pool: {worker}")
 
   def handle_worker_to_pool(self, worker_to_pool_time, worker) -> None:
     worker.set_worker_status(WorkerStatus.IN_POOL)
-    debug_print(f"{worker_to_pool_time}: Worker to pool: {worker}")
+    trace_print(f"{worker_to_pool_time}: Worker to pool: {worker}")
 
   def run(self):
     while not self.event_queue.is_empty():
@@ -152,10 +155,10 @@ class SimState:
   def print_statistics(self) -> None:
     run_label = f" [{self.run_name}]" if getattr(self, "run_name", None) else ""
     suffix = f"_{self.run_name}" if getattr(self, "run_name", None) else ""
-    debug_print(f"Queue size: {self.event_queue.size()}")
-    debug_print(f"Queue: {self.event_queue}")
-    debug_print(f"Completed jobs: {self.completed_jobs}")
-    debug_print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
+    full_debug_print(f"Queue size: {self.event_queue.size()}")
+    full_debug_print(f"Queue: {self.event_queue}")
+    full_debug_print(f"Completed jobs: {self.completed_jobs}")
+    full_debug_print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
     simlated_time = max(j.get_start_execution_time() for j in self.completed_jobs)
     print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs in {seconds_to_hms(simlated_time)} ")
     print("")
@@ -167,16 +170,20 @@ class SimState:
     return
 
 def main():
+  print("this is the new version of the jobsim")
   # Parse CLI duration H:M:S and optional config
   parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
-  parser.add_argument("--debug", "-debug", action="store_true", help="Enable debug output")
+  parser.add_argument("--debug", "-debug", choices=["trace", "full"], metavar="LEVEL", help="Enable debug output: 'trace' for basic info, 'full' for detailed output")
   parser.add_argument("--config", "-c", metavar="FILE", help="Load simulation configuration from JSON file")
   parser.add_argument("--run-name", "-n", metavar="NAME", help="Name of this simulation run (used in outputs)")
   args = parser.parse_args()
 
-  set_debug(args.debug)
-  debug_print("JobSim starting...")
+  if args.debug:
+    set_debug(args.debug)
+    full_debug_print("JobSim starting...")
+  else:
+    trace_print("JobSim starting...")
 
   sim_duration = args.duration
   # Load config if provided and create generator with it
@@ -201,4 +208,5 @@ def main():
   sim_state.print_statistics()
 
 if __name__ == "__main__":
+  print("this is the new version of the jobsim")
   main()

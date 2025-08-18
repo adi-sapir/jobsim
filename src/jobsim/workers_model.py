@@ -4,7 +4,7 @@ import argparse
 from enum import Enum
 from typing import Optional
 from . import sim_config
-from .debug_config import debug_print
+from .debug_config import debug_print, trace_print, full_debug_print
 
 class WorkerType(Enum):
   STANDBY = 'standby'
@@ -48,8 +48,9 @@ class Worker:
     return self.worker_id
 
   def set_worker_status(self, worker_status: WorkerStatus):
-    if worker_status == WorkerStatus.IN_POOL and self.worker_status == WorkerStatus.READY and self.worker_type == WorkerType.STANDBY: #Standby worker is always ready
-      return
+    #if worker_status == WorkerStatus.IN_POOL and self.worker_status == WorkerStatus.READY and self.worker_type == WorkerType.STANDBY: #Standby worker is always ready
+    #  return
+    full_debug_print(f"Setting worker {self.worker_id} status from {self.worker_status} to {worker_status}")
     self.worker_status = worker_status
 
   def get_worker_activation_time(self):
@@ -72,7 +73,7 @@ class WorkerPool:
   def __init__(self):
     self.workers: list[Worker] = []
     worker_idx = 0
-    debug_print(f"Initializing WorkerPool with {sim_config.CONFIG.standby_workers} standby workers, {sim_config.CONFIG.max_deallocated_workers} deallocated workers, and {sim_config.CONFIG.max_cold_workers} cold workers") 
+    full_debug_print(f"Initializing WorkerPool with {sim_config.CONFIG.standby_workers} standby workers, {sim_config.CONFIG.max_deallocated_workers} deallocated workers, and {sim_config.CONFIG.max_cold_workers} cold workers") 
     for _ in range(sim_config.CONFIG.standby_workers):
       worker = Worker(WorkerType.STANDBY, worker_idx)
       worker.set_worker_status(WorkerStatus.READY)
@@ -84,7 +85,7 @@ class WorkerPool:
     for _ in range(sim_config.CONFIG.max_cold_workers):
       self.workers.append(Worker(WorkerType.COLD, worker_idx))
       worker_idx += 1
-    debug_print(f"WorkerPool initialized: {self.workers}")
+    full_debug_print(f"WorkerPool initialized: {self.workers}")
 
   def add_worker(self, worker: Worker):
     self.workers.append(worker)
@@ -110,7 +111,9 @@ class WorkerPool:
 
   def acquire_in_pool_worker_prioritized(self) -> Optional[Worker]:
     """Return an IN_POOL worker, preferring DEALLOCATED, then COLD. Sets status to READY."""
-    if (worker := self._find_in_pool_worker_by_type(WorkerType.DEALLOCATED)) is not None:
+    if (worker := self._find_in_pool_worker_by_type(WorkerType.STANDBY)) is not None:
+      return worker
+    elif (worker := self._find_in_pool_worker_by_type(WorkerType.DEALLOCATED)) is not None:
         return worker
     elif (worker := self._find_in_pool_worker_by_type(WorkerType.COLD)) is not None:
         return worker

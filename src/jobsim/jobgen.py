@@ -137,8 +137,14 @@ def main():
   parser = argparse.ArgumentParser(description="Generate jobs for a simulation time window")
   parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
   parser.add_argument("--config", "-c", metavar="FILE", help="Load simulation configuration from JSON file")
+  parser.add_argument("--debug", "-debug", choices=["trace", "full"], metavar="LEVEL", help="Enable debug output: 'trace' for basic info, 'full' for detailed output")
   args = parser.parse_args()
 
+  # Set debug level if provided
+  if args.debug:
+    from .debug_config import set_debug
+    set_debug(args.debug)
+  
   # Load config if provided
   if args.config:
     sim_config.load_config(args.config)

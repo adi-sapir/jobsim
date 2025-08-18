@@ -13,7 +13,7 @@ from .sim_config import SimulationConfig, CONFIG, load_config
 from .event_queue import EventQueue, Event
 from .sim_histogram import SimHistogram
 from .time_def import MINUTE, HOUR, DAY, seconds_to_hms, parse_duration_hms
-from .debug_config import debug_print, set_debug, get_debug
+from .debug_config import debug_print, trace_print, full_debug_print, set_debug, get_debug, is_debug_enabled, is_trace_enabled, is_full_debug_enabled
 
 __all__ = [
     "SimState",
@@ -33,6 +33,11 @@ __all__ = [
     "seconds_to_hms",
     "parse_duration_hms",
     "debug_print",
+    "trace_print",
+    "full_debug_print",
     "set_debug",
     "get_debug",
+    "is_debug_enabled",
+    "is_trace_enabled",
+    "is_full_debug_enabled",
 ]
