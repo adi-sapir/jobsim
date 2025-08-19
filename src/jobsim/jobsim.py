@@ -32,6 +32,7 @@ class SimState:
       self.pending_jobs: list[Job] = []
       self.completed_jobs: list[Job] = []
       self.run_name: str | None = None
+      self.max_pending = 0
   
   def get_event_queue(self):
     return self.event_queue
@@ -81,6 +82,7 @@ class SimState:
       trace_print(f"{job_submitted_time}: Job submitted: {job} by worker {worker}")
     else:
       self.pending_jobs.append(job)
+      self.max_pending = max(self.max_pending, len(self.pending_jobs))
       trace_print(f"{job_submitted_time}: Job pending: {job}")
       if (worker := self.workers_pool.invoke_worker()) is not None:
         trace_print(f"{job_submitted_time}: Invoking worker: {worker}")
@@ -141,6 +143,7 @@ class SimState:
       print(f"Min Wait Time: {seconds_to_hms(min(wait_times))}")
       print(f"Avg Wait Time: {seconds_to_hms(int(sum(wait_times)/len(wait_times)))}")
       print(f"Max Wait Time: {seconds_to_hms(max(wait_times))}")
+      print(f"Max Pending Jobs: {self.max_pending}")
       histogram = SimHistogram(wait_times)
       histogram.print_histogram()
     
