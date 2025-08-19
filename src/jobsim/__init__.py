@@ -2,7 +2,7 @@
 JobSim - A discrete event simulation system for job execution
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "Adi Sapir"
 __email__ = "adi.sapir5@gmail.com"
 

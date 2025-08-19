@@ -8,6 +8,7 @@ from .debug_config import debug_print, trace_print, full_debug_print
 
 class WorkerStatus(Enum):
   IN_POOL = 'in_pool'
+  INITIALIZING = 'initializing'
   READY = 'ready'
   BUSY = 'busy'
 
@@ -73,17 +74,22 @@ class WorkerPool:
         worker_definition.worker_shutdown_time)
       self.pool_priorities.append(worker_definition.pool_priority)
     self.pool_priorities.sort()
+    # create priority pools
+    self.priority_pools = {}
+    for priority in self.pool_priorities:
+      self.priority_pools[priority] = []
+    # create workers
     worker_idx = 0
     for worker_type, pool_properties in POOL_PROPERTIES.items():
       for _ in range(pool_properties.pool_size):
         worker = Worker(worker_type, worker_idx)
         worker.set_worker_status(WorkerStatus.IN_POOL)
+        self.priority_pools[pool_properties.pool_priority].append(worker)
         self.workers.append(worker)
         worker_idx += 1
     full_debug_print(f"WorkerPool initialized: {self.workers}")
-
-  def get_workers(self):
-    return self.workers
+    for priority in self.pool_priorities:
+      full_debug_print(f"Priority pool {priority}: {self.priority_pools[priority]}")
 
   def allocate_ready_worker(self) -> Optional[Worker]:
     for worker in self.workers:
@@ -95,11 +101,10 @@ class WorkerPool:
   def acquire_in_pool_worker_prioritized(self) -> Optional[Worker]:
     """Return an IN_POOL worker, preferring DEALLOCATED, then COLD. Sets status to READY."""
     for priority in self.pool_priorities:
-      for worker_type, pool_properties in POOL_PROPERTIES.items(): 
-        if pool_properties.pool_priority == priority:
-          for worker in self.workers:
-            if worker.get_worker_status() == WorkerStatus.IN_POOL and worker.get_worker_type() == worker_type:
-              return worker
+      for worker in self.priority_pools[priority]:
+        if worker.get_worker_status() == WorkerStatus.IN_POOL:
+          worker.set_worker_status(WorkerStatus.INITIALIZING)
+          return worker
     return None
   
   def invoke_worker(self) -> Optional[Worker]:

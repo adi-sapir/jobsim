@@ -139,7 +139,7 @@ class SimState:
       print("Wait Time distribution (seconds):")
       print("=================================")
       print(f"Min Wait Time: {seconds_to_hms(min(wait_times))}")
-      print(f"Avg Wait Time: {seconds_to_hms(sum(wait_times)/len(wait_times))}")
+      print(f"Avg Wait Time: {seconds_to_hms(int(sum(wait_times)/len(wait_times)))}")
       print(f"Max Wait Time: {seconds_to_hms(max(wait_times))}")
       histogram = SimHistogram(wait_times)
       histogram.print_histogram()
@@ -182,7 +182,10 @@ class SimState:
     full_debug_print(f"Queue: {self.event_queue}")
     full_debug_print(f"Completed jobs: {self.completed_jobs}")
     full_debug_print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs")
-    simlated_time = max(j.get_start_execution_time() for j in self.completed_jobs)
+    if self.completed_jobs:
+      simlated_time = max(j.get_start_execution_time() for j in self.completed_jobs)
+    else:
+      simlated_time = 0
     print(f"Run{run_label}: Simulated {len(self.completed_jobs)} jobs in {seconds_to_hms(simlated_time)} ")
     print("")
     self.print_submitted_jobs()
