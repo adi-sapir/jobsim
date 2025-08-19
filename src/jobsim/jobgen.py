@@ -7,26 +7,10 @@ import argparse
 from .time_def import MINUTE, HOUR, parse_duration_hms
 from typing import Optional, Dict
 from . import sim_config
-
-
-# Job types: S - small, M - medium, L - large
-JOB_TYPES = ['S'] * 10 + ['M'] * 70 + ['L'] * 20 # fixed ratios
-random.shuffle(JOB_TYPES)
-
-JOB_DURATIONS = {'S': 10 * MINUTE, 'M': 40 * MINUTE, 'L': 90 * MINUTE}
-JOB_EXECUTION_DURATIONS = {'S': 1 * MINUTE, 'M': 4 * MINUTE, 'L': int(6.5 * MINUTE)}
-
-#Users Types (subscription types) F - free, C - creator S - studio
-USER_TYPES = ['F'] * 10 + ['C'] * 70 + ['S'] * 20
-random.shuffle(USER_TYPES)
-USER_ALLOWED_JOBS = {'F': 1, 'C': 2, 'S': 6}
-# # Users requests per hour
-LAMBDA_USERS_REQUESTS_PER_HOUR = 100
+from .debug_config import trace_print
 
 def generate_interarrival_time() -> int:
   return int(random.expovariate(sim_config.CONFIG.lambda_users_requests_per_hour / HOUR))
-
-
 
 class Job:
   def __init__(self, id, type, user_type, submission_time, start_execution_time=0):
@@ -128,10 +112,14 @@ class JobGenerator:
     return self.jobs
   
   def print_jobs(self):
-    print(f"Pending jobs: {len(self.jobs)}")
-    for job in self.jobs:
-      job_json = job.to_dict()
-      print(job_json)
+    trace_print(f"Pending jobs: {len(self.jobs)}")
+    # Print as a JSON list with each job object on a single line
+    print("[")
+    for i, job in enumerate(self.jobs):
+      if i > 0:
+        print(",")
+      print(json.dumps(job.to_dict()), end="")
+    print("\n]")
 
 def main():
   parser = argparse.ArgumentParser(description="Generate jobs for a simulation time window")
