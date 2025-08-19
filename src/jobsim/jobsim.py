@@ -199,7 +199,6 @@ class SimState:
     return
 
 def main():
-  print("this is the new version of the jobsim")
   # Parse CLI duration H:M:S and optional config
   parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
   parser.add_argument("duration", nargs="?", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00) - optional when --scenario is provided")
