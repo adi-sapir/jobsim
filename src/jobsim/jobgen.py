@@ -13,12 +13,12 @@ def generate_interarrival_time() -> int:
   return int(random.expovariate(sim_config.CONFIG.lambda_users_requests_per_hour / HOUR))
 
 class Job:
-  def __init__(self, id, type, user_type, submission_time, start_execution_time=0):
+  def __init__(self, id, type, user_type, submission_time):
     self.id = id
     self.type = type
     self.user_type = user_type
     self.submission_time = submission_time
-    self.start_execution_time = start_execution_time
+    self.start_execution_time = 0
     self.server_type = None
     self.server_id = None
 
@@ -114,11 +114,19 @@ class JobGenerator:
   def print_jobs(self):
     trace_print(f"Pending jobs: {len(self.jobs)}")
     # Print as a JSON list with each job object on a single line
+    # Only include fields relevant for scenario initialization (constructor parameters)
     print("[")
     for i, job in enumerate(self.jobs):
       if i > 0:
         print(",")
-      print(json.dumps(job.to_dict()), end="")
+      # Only output constructor-relevant fields
+      scenario_job = {
+        'id': job.id,
+        'type': job.type,
+        'user_type': job.user_type,
+        'submission_time': job.submission_time
+      }
+      print(json.dumps(scenario_job), end="")
     print("\n]")
 
 def main():

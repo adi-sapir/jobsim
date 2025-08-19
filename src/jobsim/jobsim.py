@@ -2,6 +2,7 @@ from .event_queue import EventQueue, Event
 from enum import Enum
 import sys
 import argparse
+import json
 from .workers_model import WorkerPool, WorkerStatus, POOL_PROPERTIES
 from .time_def import MINUTE, HOUR, seconds_to_hms, parse_duration_hms
 from .debug_config import debug_print, set_debug, get_debug, is_debug_enabled, is_trace_enabled, is_full_debug_enabled, full_debug_print, trace_print
@@ -47,6 +48,28 @@ class SimState:
   def init_jobs_in_queue(self, jobs: list[Job]):
     for job in jobs:
       self.event_queue.push(job.submission_time, EventType.JOB_SUBMITTED, job)
+  
+  def load_jobs_from_file(self, filepath: str) -> list[Job]:
+    """Load jobs from a JSON file."""
+    try:
+      with open(filepath, 'r') as f:
+        jobs_data = json.load(f)
+      
+      # Convert JSON objects directly to Job instances using ** unpacking
+      jobs = [Job(**job_data) for job_data in jobs_data]
+      
+      trace_print(f"Loaded {len(jobs)} jobs from scenario file {filepath}")
+      return jobs
+      
+    except FileNotFoundError:
+      print(f"Error: Scenario file '{filepath}' not found")
+      sys.exit(1)
+    except json.JSONDecodeError as e:
+      print(f"Error: Invalid JSON in scenario file '{filepath}': {e}")
+      sys.exit(1)
+    except Exception as e:
+      print(f"Error loading scenario file '{filepath}': {e}")
+      sys.exit(1)
 
   def handle_job_submitted(self, job_submitted_time, job) -> None:
     if (worker := self.workers_pool.allocate_ready_worker()) is not None:
@@ -173,10 +196,11 @@ def main():
   print("this is the new version of the jobsim")
   # Parse CLI duration H:M:S and optional config
   parser = argparse.ArgumentParser(description="JobSim - job execution simulation")
-  parser.add_argument("duration", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00)")
+  parser.add_argument("duration", nargs="?", type=parse_duration_hms, help="Simulation time in H:M:S (e.g., 1:30:00) - optional when --scenario is provided")
   parser.add_argument("--debug", "-debug", choices=["trace", "full"], metavar="LEVEL", help="Enable debug output: 'trace' for basic info, 'full' for detailed output")
   parser.add_argument("--config", "-c", metavar="FILE", help="Load simulation configuration from JSON file")
   parser.add_argument("--run-name", "-n", metavar="NAME", help="Name of this simulation run (used in outputs)")
+  parser.add_argument("--scenario", metavar="FILE", help="Load jobs from JSON file instead of generating them")
   args = parser.parse_args()
 
   if args.debug:
@@ -185,7 +209,6 @@ def main():
   else:
     trace_print("JobSim starting...")
 
-  sim_duration = args.duration
   # Load config if provided and create generator with it
   from .sim_config import load_config, CONFIG
   if args.config:
@@ -193,6 +216,25 @@ def main():
   job_generator = JobGenerator()
 
   sim_state = SimState()
+  
+  # Load jobs from scenario file if provided, otherwise generate them
+  if args.scenario:
+    jobs = sim_state.load_jobs_from_file(args.scenario)
+    sim_state.init_jobs_in_queue(jobs)
+    # When using scenario file, duration is optional - use max submission time + buffer
+    if args.duration:
+      sim_duration = args.duration
+    else:
+      max_submission_time = max(job.submission_time for job in jobs) if jobs else 0
+      sim_duration = max_submission_time 
+  else:
+    # Duration is required when generating jobs
+    if not args.duration:
+      print("Error: duration is required when not using --scenario")
+      sys.exit(1)
+    sim_duration = args.duration
+    sim_state.init_jobs_in_queue(job_generator.generate_jobs(0, sim_duration))
+  
   # Precedence: explicit run-name > config filename > timestamp, and always append sim-<seconds>
   base_name = (
     args.run_name
@@ -200,7 +242,6 @@ def main():
     or datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
   )
   sim_state.run_name = f"{base_name}-sim-{sim_duration}"
-  sim_state.init_jobs_in_queue(job_generator.generate_jobs(0, sim_duration))
   #Create the event queue and initialize jobs
   print(f"Starting Simulation. Job submission duration: {seconds_to_hms(sim_duration)}")
   sim_state.run()

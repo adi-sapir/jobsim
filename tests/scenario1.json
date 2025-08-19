@@ -1,0 +1,16 @@
+[
+{"id": 0, "type": "M", "user_type": "C", "submission_time": 307},
+{"id": 1, "type": "M", "user_type": "S", "submission_time": 716},
+{"id": 2, "type": "M", "user_type": "F", "submission_time": 718},
+{"id": 3, "type": "M", "user_type": "F", "submission_time": 2483},
+{"id": 4, "type": "S", "user_type": "C", "submission_time": 2495},
+{"id": 5, "type": "S", "user_type": "C", "submission_time": 2495},
+{"id": 6, "type": "M", "user_type": "C", "submission_time": 2496},
+{"id": 7, "type": "M", "user_type": "C", "submission_time": 2630},
+{"id": 8, "type": "M", "user_type": "C", "submission_time": 2630},
+{"id": 9, "type": "S", "user_type": "S", "submission_time": 2644},
+{"id": 10, "type": "S", "user_type": "S", "submission_time": 2644},
+{"id": 11, "type": "L", "user_type": "S", "submission_time": 2644},
+{"id": 12, "type": "L", "user_type": "S", "submission_time": 2644},
+{"id": 13, "type": "S", "user_type": "F", "submission_time": 3761}
+]

@@ -4,7 +4,7 @@ A Python-based discrete event simulation system that models job scheduling, work
 
 ## Overview
 
-JobSim simulates a job processing system with three worker tiers: **standby** (always ready), **deallocated** (quick activation), and **cold** (slow startup). Jobs arrive according to configurable patterns and are processed by available workers, with automatic worker lifecycle management.
+JobSim simulates a job processing system with three worker tiers: **standby** (always ready), **deallocated** (quick activation), and **cold** (slow startup). Jobs can be generated dynamically according to configurable patterns or loaded from predefined scenario files. Workers are automatically allocated and managed throughout the simulation lifecycle.
 
 ## Architecture
 
@@ -30,22 +30,44 @@ JobSim simulates a job processing system with three worker tiers: **standby** (a
 4. Workers complete jobs and return to READY state
 5. Idle workers are sent back to pool after configurable shutdown delay
 
+## Installation
+
+### From Source (Recommended for Development)
+
+```bash
+git clone <repository-url>
+cd jobsim
+pip install -e .
+```
+
+### From Package
+
+```bash
+pip install jobsim-*.whl
+```
+
+After installation, three command-line tools are available:
+- `jobsim` - Main simulation engine
+- `jobgen` - Job generator for creating scenarios  
+- `sim-config` - Configuration management utility
+
 ## Project Structure
 
 ```
 jobsim/
-├── src/
+├── src/jobsim/
+│   ├── __init__.py       # Package initialization
 │   ├── jobsim.py         # Main simulator with CLI
 │   ├── jobgen.py         # Job generation CLI
 │   ├── event_queue.py    # Min-heap event queue
 │   ├── workers_model.py  # Worker types, statuses, and pool management
 │   ├── sim_config.py     # Configuration schema and CLI
 │   ├── debug_config.py   # Debug logging utilities
+│   ├── sim_histogram.py  # Text-based histogram utilities
 │   └── time_def.py       # Time constants (MINUTE, HOUR, DAY)
-├── tests/                 # Configuration examples and test outputs
-│   ├── jobsim_config_basic.json
-│   ├── jobsim_config_with_minimal_workers.json
-│   └── *.png             # Generated plots from test runs
+├── examples/configs/      # Sample configuration files
+├── pyproject.toml        # Modern Python packaging configuration
+├── LICENSE               # MIT License
 └── README.md
 ```
 
@@ -92,30 +114,58 @@ The simulation configuration supports:
 
 ```bash
 # Basic simulation (1 hour)
-python src/jobsim.py 1:00:00
+jobsim 1:00:00
 
 # With configuration file
-python src/jobsim.py 0:30:00 --config tests/jobsim_config_basic.json
+jobsim 0:30:00 --config config.json
 
-# Named run with debug output
-python src/jobsim.py 0:15:00 --config tests/jobsim_config_basic.json --run-name baseline --debug
+# Named run with debug output (trace or full level)
+jobsim 0:15:00 --config config.json --run-name baseline --debug trace
+
+# Using a predefined scenario file (duration optional when using scenario)
+jobsim --scenario scenario.json
+
+# Using scenario with specific duration and debug
+jobsim 1:00:00 --scenario scenario.json --debug full
 ```
 
-### Job Generation Only
+### Job Generation and Scenarios
 
 ```bash
-# Generate jobs for 5 minutes (uses current config)
-python src/jobgen.py 0:05:00
+# Generate jobs for 5 minutes (outputs scenario-ready JSON)
+jobgen 0:05:00
+
+# Generate jobs with configuration and debug
+jobgen 0:05:00 --config config.json --debug trace
+
+# Save jobs to scenario file
+jobgen 1:00:00 > scenario.json
+
+# Use scenario in simulation
+jobsim --scenario scenario.json
+```
+
+The job generator outputs clean JSON suitable for use as scenario files. Each job contains only the fields needed for simulation initialization:
+
+```json
+[
+{"id": 0, "type": "L", "user_type": "C", "submission_time": 109},
+{"id": 1, "type": "M", "user_type": "C", "submission_time": 109},
+{"id": 2, "type": "S", "user_type": "F", "submission_time": 234}
+]
 ```
 
 ### Configuration Management
 
 ```bash
 # Print current configuration
-python src/sim_config.py --print
+sim-config --print
 
 # Load and save configuration
-python src/sim_config.py --load tests/jobsim_config_basic.json --save my_config.json
+sim-config --load config.json --save my_config.json
+
+# Load configuration with debug
+sim-config --load config.json --debug trace
 ```
 
 ## Run Naming
@@ -198,12 +248,18 @@ while not eq.is_empty():
 
 ## Debug and Monitoring
 
-Enable debug output with `--debug` flag to see:
+Enable debug output with `--debug` flag (two levels available):
+
+**Trace Level** (`--debug trace`):
 - Job submission and worker assignment events
 - Worker state transitions
-- Queue management operations
-- Detailed timing information
+- Basic timing information
+
+**Full Level** (`--debug full`):
+- All trace-level information plus:
+- Detailed queue management operations  
 - Worker pool initialization details
+- Comprehensive event processing logs
 
 ## Performance Characteristics
 
