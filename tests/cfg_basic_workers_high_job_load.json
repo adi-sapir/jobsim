@@ -1,0 +1,69 @@
+{
+    "job_definitions": [
+        {
+            "job_type": "S",
+            "job_duration": 600,
+            "job_execution_duration": 60,
+            "job_probability": 30
+        },
+        {
+            "job_type": "H",
+            "job_duration": 1800,
+            "job_execution_duration": 180,
+            "job_probability": 30
+        },
+        {
+            "job_type": "M",
+            "job_duration": 3600,
+            "job_execution_duration": 360,
+            "job_probability": 20
+        },
+        {
+            "job_type": "L",
+            "job_duration": 5400,
+            "job_execution_duration": 385,
+            "job_probability": 20
+        }
+    ],
+    "user_definitions": [
+        {
+            "user_type": "F",
+            "user_probability": 50,
+            "num_jobs": 1
+        },
+        {
+            "user_type": "C",
+            "user_probability": 30,
+            "num_jobs": 2
+        },
+        {
+            "user_type": "S",
+            "user_probability": 20,
+            "num_jobs": 6
+        }
+    ],
+    "worker_definitions": [
+        {
+            "worker_type": "STANDBY",
+            "worker_startup_time": 0,
+            "worker_shutdown_time": 0,
+            "pool_size": 2,
+            "pool_priority": 1
+        },
+        {
+            "worker_type": "DEALLOCATED",
+            "worker_startup_time": 180,
+            "worker_shutdown_time": 0,
+            "pool_size": 10,
+            "pool_priority": 2
+        },
+        {
+            "worker_type": "COLD",
+            "worker_startup_time": 600,
+            "worker_shutdown_time": 1800,
+            "pool_size": 30,
+            "pool_priority": 3
+        }
+    ],
+    "lambda_users_requests_per_hour": 100
+}

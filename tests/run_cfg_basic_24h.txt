@@ -1,0 +1,63 @@
+Starting Simulation. Job submission duration: 24 hours :0 minutes :0 seconds
+Simulation ended
+Run [cfg_basic-sim-86400]: Simulated 375 jobs in 24 hours :41 minutes :15 seconds 
+
+Submitted Jobs distribution:
+============================
+M: 152
+L: 74
+S: 149
+Submitted Jobs distribution over time (seconds):
+================================================
+|█ 44-8927: 35 (M 13) (L 6) (S 16)
+|██ 8928-17811: 45 (S 15) (M 21) (L 9)
+|███ 17812-26695: 66 (M 23) (S 30) (L 13)
+|█ 26696-35579: 20 (M 10) (L 4) (S 6)
+|█ 35580-44463: 29 (M 11) (S 12) (L 6)
+|█ 44464-53347: 27 (M 9) (S 11) (L 7)
+|█ 53348-62231: 32 (M 13) (S 14) (L 5)
+|██ 62232-71115: 54 (L 11) (S 19) (M 24)
+|█ 71116-79999: 35 (M 12) (S 18) (L 5)
+|█ 80000-88883: 32 (M 16) (L 8) (S 8)
+| 88884-97767: 0
+
+Wait Time distribution (seconds):
+=================================
+Min Wait Time: 0 seconds
+Avg Wait Time: 53 seconds
+Max Wait Time: 3 minutes :0 seconds
+Max Pending Jobs: 10
+|████████████ 0-18: 226
+| 19-37: 8
+| 38-56: 8
+|█ 57-75: 23
+| 76-94: 3
+| 95-113: 6
+| 114-132: 12
+| 133-151: 7
+| 152-170: 6
+|████ 171-189: 76
+| 190-208: 0
+
+Workers used:
+=============
+Workers used (DEALLOCATED): 9
+Workers used (STANDBY): 2
+Workers used (COLD): 3
+Processing time (DEALLOCATED): 5 hours :48 minutes :0 seconds
+Processing time (STANDBY): 18 hours :39 minutes :35 seconds
+Processing time (COLD): 1 hours :8 minutes :15 seconds
+Total processing time: 25 hours :35 minutes :50 seconds
+Workers usage distribution:
+===========================
+|█ 44-8927: 35 (STANDBY-0 17) (STANDBY-1 8) (DEALLOCATED-2 2) (DEALLOCATED-3 2) (DEALLOCATED-4 3) (DEALLOCATED-5 2) (DEALLOCATED-6 1)
+|██ 8928-17811: 41 (STANDBY-1 13) (STANDBY-0 17) (DEALLOCATED-2 7) (DEALLOCATED-3 2) (DEALLOCATED-4 1) (DEALLOCATED-5 1)
+|███ 17812-26695: 70 (DEALLOCATED-3 6) (DEALLOCATED-4 4) (DEALLOCATED-5 4) (DEALLOCATED-6 3) (STANDBY-0 20) (STANDBY-1 12) (DEALLOCATED-2 3) (DEALLOCATED-8 1) (DEALLOCATED-9 2) (DEALLOCATED-7 2) (DEALLOCATED-10 1) (COLD-12 3) (COLD-13 5) (COLD-14 4)
+|█ 26696-35579: 20 (COLD-12 5) (STANDBY-0 10) (STANDBY-1 4) (DEALLOCATED-2 1)
+|█ 35580-44463: 29 (STANDBY-0 18) (STANDBY-1 10) (DEALLOCATED-2 1)
+|█ 44464-53347: 27 (STANDBY-0 12) (STANDBY-1 9) (DEALLOCATED-2 2) (DEALLOCATED-3 2) (DEALLOCATED-4 1) (DEALLOCATED-5 1)
+|█ 53348-62231: 32 (STANDBY-0 19) (STANDBY-1 7) (DEALLOCATED-2 4) (DEALLOCATED-3 2)
+|██ 62232-71115: 54 (STANDBY-0 19) (STANDBY-1 10) (DEALLOCATED-2 5) (DEALLOCATED-3 5) (DEALLOCATED-4 3) (DEALLOCATED-5 3) (DEALLOCATED-6 3) (DEALLOCATED-7 2) (DEALLOCATED-8 3) (DEALLOCATED-9 1)
+|█ 71116-79999: 35 (STANDBY-0 16) (STANDBY-1 14) (DEALLOCATED-2 1) (DEALLOCATED-3 1) (DEALLOCATED-6 1) (DEALLOCATED-7 1) (DEALLOCATED-5 1)
+|█ 80000-88883: 32 (STANDBY-0 17) (STANDBY-1 13) (DEALLOCATED-2 2)
+| 88884-97767: 0

@@ -3,15 +3,16 @@ from typing import List, Any, Tuple
 from .debug_config import debug_print
 
 class SimHistogramBin:
-    def __init__(self, min_val: int, max_val: int, print_scale_factor: float):
+    def __init__(self, min_val: int, max_val: int, print_scale_factor: float, total_data_points_count: int):
         self.min_val: int = min_val
         self.max_val: int = max_val
         self.print_scale_factor: float = print_scale_factor
         self.total_count: int = 0
         self.count_by_types: dict[str, int] = {}
+        self.total_data_points_count = total_data_points_count
     def __str__(self):
         column_str = "|" + "█" * int(self.total_count * self.print_scale_factor)
-        label_str = f"{self.min_val}-{self.max_val}: {self.total_count}"
+        label_str = f"{self.min_val}-{self.max_val}: {self.total_count} ({self.total_count / self.total_data_points_count * 100:.0f}%)"
         if (len(self.count_by_types) > 0):
             label_str += " " + " ".join([f"({k} {v})" for k, v in self.count_by_types.items()])
         return f"{column_str} {label_str}"
@@ -24,12 +25,14 @@ class SimHistogram:
     def __init__(self, data: List[Any], bin_count=10):
         self.min_val = min(data)
         self.max_val = max(data)
+        self.data_points_count = len(data)
         self.bin_print_max_val = 20
         self.bin_width = int((self.max_val - self.min_val) / bin_count + 1)
         self.bins = [SimHistogramBin(
             self.min_val + i * self.bin_width,
             self.min_val + (i+1) * self.bin_width - 1,
-            self.bin_print_max_val / len(data) if len(data) > 0 else 0) for i in range(bin_count + 1)]
+            self.bin_print_max_val / len(data) if len(data) > 0 else 0,
+            self.data_points_count) for i in range(bin_count + 1)]
         for val in data:
             idx = int((val - self.min_val) / self.bin_width)
             self.bins[idx].total_count += 1
@@ -43,12 +46,14 @@ class SimHistogramStacked:
         key_values = [item[0] for item in data]
         self.min_val = min(key_values)
         self.max_val = max(key_values)
+        self.data_points_count = len(data)
         self.bin_print_max_val = 20
         self.bin_width = int((self.max_val - self.min_val) / bin_count + 1)
         self.bins = [SimHistogramBin(
             self.min_val + i * self.bin_width,
             self.min_val + (i+1) * self.bin_width - 1,
-            self.bin_print_max_val / len(data) if len(data) > 0 else 0) for i in range(bin_count + 1)]
+            self.bin_print_max_val / len(data) if len(data) > 0 else 0,
+            self.data_points_count) for i in range(bin_count + 1)]
         for val in data:
             idx = int((val[0] - self.min_val) / self.bin_width)
             self.bins[idx].add_data_point(val[1])
