@@ -32,7 +32,7 @@ class SimHistogram:
             self.min_val + i * self.bin_width,
             self.min_val + (i+1) * self.bin_width - 1,
             self.bin_print_max_val / len(data) if len(data) > 0 else 0,
-            self.data_points_count) for i in range(bin_count + 1)]
+            self.data_points_count) for i in range(bin_count)]
         for val in data:
             idx = int((val - self.min_val) / self.bin_width)
             self.bins[idx].total_count += 1
@@ -53,7 +53,7 @@ class SimHistogramStacked:
             self.min_val + i * self.bin_width,
             self.min_val + (i+1) * self.bin_width - 1,
             self.bin_print_max_val / len(data) if len(data) > 0 else 0,
-            self.data_points_count) for i in range(bin_count + 1)]
+            self.data_points_count) for i in range(bin_count)]
         for val in data:
             idx = int((val[0] - self.min_val) / self.bin_width)
             self.bins[idx].add_data_point(val[1])
