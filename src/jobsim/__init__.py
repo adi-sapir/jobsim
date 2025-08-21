@@ -7,8 +7,8 @@ __author__ = "Adi Sapir"
 __email__ = "adi.sapir5@gmail.com"
 
 from .jobsim import SimState
-from .jobgen import JobGenerator
-from .workers_model import WorkerPool, WorkerStatus, POOL_PROPERTIES
+from .jobgen import JobGenerator, Job
+from .workers_model import WorkerPool, WorkerStatus, Worker, POOL_PROPERTIES
 from .sim_config import SimulationConfig, CONFIG, load_config
 from .event_queue import EventQueue, Event
 from .sim_histogram import SimHistogram
@@ -17,8 +17,10 @@ from .debug_config import debug_print, trace_print, full_debug_print, set_debug,
 
 __all__ = [
     "SimState",
-    "JobGenerator", 
+    "JobGenerator",
+    "Job",
     "WorkerPool",
+    "Worker",
     "WorkerStatus",
     "POOL_PROPERTIES",
     "SimulationConfig",

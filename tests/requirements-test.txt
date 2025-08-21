@@ -1,0 +1,20 @@
+# Test dependencies for JobSim
+# Install with: pip install -r tests/requirements-test.txt
+
+# Core testing framework
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+
+# Performance testing
+psutil>=5.9.0
+
+# Optional: Additional testing tools
+pytest-xdist>=3.0.0  # Parallel test execution
+pytest-html>=3.1.0   # HTML test reports
+pytest-benchmark>=4.0.0  # Performance benchmarking
+
+# Code quality tools
+flake8>=6.0.0
+black>=23.0.0
+mypy>=1.0.0
