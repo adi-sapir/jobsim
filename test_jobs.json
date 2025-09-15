@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "type": "batch",
+    "user_type": "user1",
+    "submission_time": 100,
+    "processing_complete_time": 150
+  },
+  {
+    "id": 2,
+    "type": "interactive",
+    "user_type": "user2",
+    "submission_time": 120,
+    "processing_complete_time": 180
+  },
+  {
+    "id": 3,
+    "type": "batch",
+    "user_type": "user1",
+    "submission_time": 140,
+    "processing_complete_time": 200
+  }
+]
