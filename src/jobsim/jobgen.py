@@ -18,6 +18,8 @@ class Job:
     self.type = type
     self.user_type = user_type
     self.submission_time = submission_time
+    self.processing_start_time = 0
+    self.processing_complete_time = 0
     self.start_execution_time = 0
     self.server_type = None
     self.server_id = None

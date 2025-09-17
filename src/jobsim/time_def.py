@@ -16,6 +16,17 @@ def seconds_to_hms(seconds: int) -> str:
   else:
     return f"{seconds} seconds"
 
+def seconds_to_hms_short(seconds: int) -> str:
+  hours = seconds // HOUR
+  minutes = (seconds % HOUR) // MINUTE
+  seconds = seconds % MINUTE
+  if hours > 0:
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+  elif minutes > 0:
+    return f"{minutes:02d}:{seconds:02d}"
+  else:
+    return f"{seconds:02d}"
+
 def parse_duration_hms(value: str) -> int:
   """Parse duration string in H:M:S format and return total seconds."""
   try:
