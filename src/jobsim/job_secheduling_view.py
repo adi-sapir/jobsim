@@ -29,6 +29,11 @@ except ImportError:
 
 # Global debug flag
 DEBUG_ENABLED = False
+SUBMIT_SYMBOL = 'L'
+WAITING_SYMBOL = ':'
+START_SYMBOL = 'S'
+PROCESSING_SYMBOL = '*'
+FINISH_SYMBOL = 'F'
 
 def debug_print(*args, **kwargs):
     """Print debug messages only if debug is enabled"""
@@ -59,19 +64,19 @@ class JobSchedulingStep:
         self.slots[slot_idx] = ':'
     
     def mark_submit(self, slot_idx: int):
-        self.slots[slot_idx] = 'L'
+        self.slots[slot_idx] = SUBMIT_SYMBOL
     
     def mark_waiting(self, slot_idx: int):
-        self.slots[slot_idx] = 'w'
+        self.slots[slot_idx] = WAITING_SYMBOL
     
     def mark_start(self, slot_idx: int):
-        self.slots[slot_idx] = 'S'
+        self.slots[slot_idx] = START_SYMBOL
 
     def mark_processing(self, slot_idx: int):
-        self.slots[slot_idx] = '*'
+        self.slots[slot_idx] = PROCESSING_SYMBOL
         
     def mark_finish(self, slot_idx: int):
-        self.slots[slot_idx] = 'F'
+        self.slots[slot_idx] = FINISH_SYMBOL
 
 class JobSchedulingView:
     def __init__(self):
@@ -79,6 +84,7 @@ class JobSchedulingView:
         self.step_width = 1
         self.init_time = 0
         self.finish_time = 0
+
 
     def add_job(self, job: Job):
         first_step_idx = (job.submission_time - self.init_time) // self.step_width
@@ -120,6 +126,15 @@ class JobSchedulingView:
 
     def print_view(self):
         print("Job Scheduling View:")
+        print(f"Step width: {self.step_width}")
+        print(f"Init time: {seconds_to_hms(self.init_time)}")
+        print(f"Finish time: {seconds_to_hms(self.finish_time)}")
+        print(f"Legend:")
+        print(f"  {SUBMIT_SYMBOL} - Submit")
+        print(f"  {WAITING_SYMBOL} - Waiting")
+        print(f"  {START_SYMBOL} - Start")
+        print(f"  {PROCESSING_SYMBOL} - Processing")
+        print(f"  {FINISH_SYMBOL} - Finish")
         print("=" * 50)
         for step in self.steps:
             slots_str = ' '.join(step.slots) if step.slots else ''
