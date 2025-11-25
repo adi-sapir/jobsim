@@ -17,11 +17,11 @@ flowchart TD
     Storage["Object Storage"]
     Callback["Webhook Receiver"]
 
-    Client -->|POST /jobs| API
+    Client -->|"POST /jobs"| API
     API --> Queue
     Queue --> Worker
-    Worker -->|Upload result| Storage
-    Worker -->|Send callback| Callback
-    Client -->|GET /jobs/{id}| API
+    Worker -->|"Upload result"| Storage
+    Worker -->|"Send callback"| Callback
+    Client -->|"GET /jobs/:id"| API
     API --> Storage
 
